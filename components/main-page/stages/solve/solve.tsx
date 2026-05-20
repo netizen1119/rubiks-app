@@ -64,6 +64,57 @@ const SolveCubeStage = () => {
     }
   }, []);
 
+  // 빈 영역 드래그로 시점 회전 + release 시 원위치 복귀. initSolveCube 와 분리해서
+  // inited 가드 없이 idempotent setup → StrictMode dev 이중호출에 안전.
+  useEffect(() => {
+    const state = useAppStore.getState();
+    const canvas = state.mainCanvas.current;
+    const orbit = state.orbitControls.current;
+    const camera = state.camera.current;
+    if (!canvas || !orbit) return;
+
+    const prevPointerEvents = canvas.style.pointerEvents;
+    canvas.style.pointerEvents = "auto";
+    const prevTouchAction = canvas.style.touchAction;
+    canvas.style.touchAction = "none";
+    const prevOrbitEnabled = orbit.enabled;
+    orbit.enabled = true;
+
+    // updateCameraPos 이 gsap 으로 카메라를 움직이므로, 그 완료 후의 위치를 "원위치"
+    // 로 삼아야 한다. 약간의 지연 후 캡처.
+    let originalCameraPos = camera.position.clone();
+    const captureTimer = setTimeout(() => {
+      originalCameraPos = camera.position.clone();
+    }, 700);
+
+    const onOrbitStart = () => {
+      gsap.killTweensOf(camera.position);
+    };
+    const onOrbitEnd = () => {
+      gsap.killTweensOf(camera.position);
+      gsap.to(camera.position, {
+        x: originalCameraPos.x,
+        y: originalCameraPos.y,
+        z: originalCameraPos.z,
+        duration: 0.6,
+        ease: "power2.inOut",
+        onUpdate: () => camera.lookAt(0, 0, 0),
+      });
+    };
+    orbit.addEventListener("start", onOrbitStart);
+    orbit.addEventListener("end", onOrbitEnd);
+
+    return () => {
+      clearTimeout(captureTimer);
+      canvas.style.pointerEvents = prevPointerEvents;
+      canvas.style.touchAction = prevTouchAction;
+      orbit.removeEventListener("start", onOrbitStart);
+      orbit.removeEventListener("end", onOrbitEnd);
+      orbit.enabled = prevOrbitEnabled;
+      gsap.killTweensOf(camera.position);
+    };
+  }, []);
+
   const finished = cubeSolutionStep === null;
   // Undo 가능 조건: 진행 중이면 step > 0, 완료 상태면 solution 이 비지 않았을 때.
   const canUndo = finished

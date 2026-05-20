@@ -8,9 +8,10 @@ import { applyMove } from "@/lib/solver/lbl-solver";
 import { ICubeMoves } from "@/lib/moves/moves";
 import { useAppStore } from "@/lib/store/store";
 import { solved_cube } from "@/lib/helpers/helper";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
+import TutorialOverlay from "./tutorial-overlay";
 
 // 큐비의 현재 위치(world)로부터 격자 인덱스 (gx, gy, gz ∈ {-1, 0, 1}).
 // 메인 vis 큐비는 격자 -1~1 좌표에 놓여 있으며, rotateCubeAction 이 회전 후
@@ -72,6 +73,12 @@ const detectHitFace = (
 const ScrambleCube = () => {
   const { updateStore, updateCube, rotateCube } = useAppStore();
   const { toast } = useToast();
+  const [moveHistory, setMoveHistory] = useState<string[]>([]);
+  // 호버 시 슬라이스의 두 방향 무브(pos/neg) 표시. 드래그 전에 어떤 무브가
+  // 적용될지 미리 보여줌. 호버 외 null.
+  const [hoverHint, setHoverHint] = useState<{ pos: string; neg: string } | null>(
+    null
+  );
 
   // 큐비 누적 회전을 초기화하고 solved 상태로 페인트. mount + Reset 버튼 양쪽에서 사용.
   const resetCubeToInitial = () => {
@@ -146,7 +153,29 @@ const ScrambleCube = () => {
     const prevOrbitEnabled = orbit?.enabled ?? true;
     if (orbit) orbit.enabled = true;
 
+    // 매뉴얼 입력 진입 시점의 카메라 위치를 "원위치" 로 저장.
+    // 빈 영역 드래그 종료 시 부드럽게 복귀.
     const camera = state.camera.current;
+    const originalCameraPos = camera.position.clone();
+    const onOrbitStart = () => {
+      gsap.killTweensOf(camera.position);
+    };
+    const onOrbitEnd = () => {
+      gsap.killTweensOf(camera.position);
+      gsap.to(camera.position, {
+        x: originalCameraPos.x,
+        y: originalCameraPos.y,
+        z: originalCameraPos.z,
+        duration: 0.6,
+        ease: "power2.inOut",
+        onUpdate: () => camera.lookAt(0, 0, 0),
+      });
+    };
+    if (orbit) {
+      orbit.addEventListener("start", onOrbitStart);
+      orbit.addEventListener("end", onOrbitEnd);
+    }
+
     const cubes = state.objects.current.cubes;
     const outlined = state.outlinedSelection;
     const scene = state.objects.current.scene;
@@ -243,6 +272,7 @@ const ScrambleCube = () => {
       const hit = pickHit(clientX, clientY);
       if (!hit) {
         setOutlinedSlice(null, null);
+        setHoverHint((prev) => (prev === null ? prev : null));
         return null;
       }
       const grid = getGridPos(hit.group);
@@ -253,9 +283,17 @@ const ScrambleCube = () => {
       const resolved = resolveAxisSlice(hit.face, grid, hit.center, offset);
       if (!resolved) {
         setOutlinedSlice(null, null);
+        setHoverHint((prev) => (prev === null ? prev : null));
         return null;
       }
       setOutlinedSlice(resolved.rotAxis, resolved.slice);
+      const spec = MOVE_TABLE[`${resolved.rotAxis}|${resolved.slice}`];
+      if (spec) {
+        setHoverHint((prev) => {
+          if (prev && prev.pos === spec.pos && prev.neg === spec.neg) return prev;
+          return { pos: spec.pos, neg: spec.neg };
+        });
+      }
       return { face: hit.face, grid, center: hit.center };
     };
 
@@ -303,10 +341,11 @@ const ScrambleCube = () => {
       const spec = MOVE_TABLE[`${resolved.rotAxis}|${resolved.slice}`];
       if (!spec) return;
       const move = positive ? spec.pos : spec.neg;
-      // 시각 회전(rotateCube) + 큐브 상태 문자열 동기화(applyMove).
+      // 시각 회전(rotateCube) + 큐브 상태 문자열 동기화(applyMove) + 히스토리 추가.
       const cur = useAppStore.getState().cube;
       rotateCube(move as ICubeMoves);
       updateStore({ cube: applyMove(cur, move) });
+      setMoveHistory((prev) => [...prev, move]);
     };
 
     const onUp = () => {
@@ -327,7 +366,12 @@ const ScrambleCube = () => {
       window.removeEventListener("pointerup", onUp);
       canvas.style.pointerEvents = prevPointerEvents;
       canvas.style.touchAction = prevTouchAction;
-      if (orbit) orbit.enabled = prevOrbitEnabled;
+      if (orbit) {
+        orbit.removeEventListener("start", onOrbitStart);
+        orbit.removeEventListener("end", onOrbitEnd);
+        orbit.enabled = prevOrbitEnabled;
+      }
+      gsap.killTweensOf(camera.position);
       setOutlinedSlice(null, null);
     };
   }, []);
@@ -349,6 +393,21 @@ const ScrambleCube = () => {
   const onReset = () => {
     if (useAppStore.getState().isDuringRotation) return;
     resetCubeToInitial();
+    setMoveHistory([]);
+  };
+
+  const onCopyHistory = async () => {
+    if (moveHistory.length === 0) return;
+    try {
+      await navigator.clipboard.writeText(moveHistory.join(" "));
+      toast({
+        title: "복사됨",
+        description: `${moveHistory.length}개 무브를 클립보드에 복사했습니다.`,
+        duration: 2000,
+      });
+    } catch {
+      // navigator.clipboard 미지원 환경. 무시.
+    }
   };
 
   return (
@@ -356,6 +415,7 @@ const ScrambleCube = () => {
       className="w-full h-full flex flex-col items-center justify-center gap-5 overflow-hidden p-4"
       style={{ animation: "fade-in 0.4s ease-out" }}
     >
+      <TutorialOverlay />
       <h1 className="text-lg font-semibold text-foreground">큐브를 스크램블하세요</h1>
       <p className="text-xs text-muted-foreground -mt-3 text-center max-w-[22rem]">
         조각 면 위에 커서를 올리면 회전할 층이 강조됩니다. 그 방향으로 드래그해 회전.
@@ -368,6 +428,19 @@ const ScrambleCube = () => {
       >
         <CubePosAnchor />
       </div>
+
+      {/* 호버 힌트 — 드래그 방향별 무브 미리보기 */}
+      <div className="text-xs text-muted-foreground h-4">
+        {hoverHint ? (
+          <span>
+            드래그 방향:{" "}
+            <span className="font-mono text-foreground">{hoverHint.pos}</span>
+            <span className="opacity-60"> 또는 </span>
+            <span className="font-mono text-foreground">{hoverHint.neg}</span>
+          </span>
+        ) : null}
+      </div>
+
       <div className="flex items-center gap-3">
         <Button variant="secondary" onClick={onReset}>
           Reset
@@ -377,6 +450,26 @@ const ScrambleCube = () => {
           뒤로
         </Button>
       </div>
+
+      {/* 무브 히스토리 — 실물 큐브로 동일 스크램블 재현용 */}
+      {moveHistory.length > 0 && (
+        <div className="w-full max-w-[24rem] mt-1">
+          <div className="flex items-center justify-between text-[0.7rem] text-muted-foreground mb-1 px-1">
+            <span>무브 ({moveHistory.length})</span>
+            <button
+              onClick={onCopyHistory}
+              className="text-foreground hover:underline"
+            >
+              📋 복사
+            </button>
+          </div>
+          <div
+            className="px-2 py-1.5 rounded-md border border-border/60 bg-muted/30 font-mono text-xs text-foreground/90 leading-relaxed max-h-16 overflow-y-auto break-words"
+          >
+            {moveHistory.join(" ")}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

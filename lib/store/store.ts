@@ -36,7 +36,11 @@ const getMainCanvasDefault = () => {
   c.current = null;
   return c;
 };
-type OrbitLike = { enabled: boolean };
+type OrbitLike = {
+  enabled: boolean;
+  addEventListener: (type: string, listener: () => void) => void;
+  removeEventListener: (type: string, listener: () => void) => void;
+};
 const getOrbitControlsDefault = () => {
   const c = createRef() as React.MutableRefObject<OrbitLike | null>;
   c.current = null;
