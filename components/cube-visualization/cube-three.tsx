@@ -76,10 +76,13 @@ function CubeThree() {
     // 매뉴얼 입력 단계에서 비활성화하기 위해 노출.
     orbitControls.current = controls;
 
-    // Set up post-processing
+    // Set up post-processing — 강조 외곽선 가시성 향상.
     const outlinePass = new OutlinePass(new THREE.Vector2(width, height), scene, camera);
-    outlinePass.edgeStrength = 6;
-    outlinePass.edgeThickness = 2;
+    outlinePass.edgeStrength = 8;
+    outlinePass.edgeThickness = 3;
+    outlinePass.pulsePeriod = 0;
+    outlinePass.visibleEdgeColor.set(0xffeb3b); // 밝은 노랑 — 어떤 큐비 색에도 잘 보임
+    outlinePass.hiddenEdgeColor.set(0x664400); // 가려진 부분은 어두운 노랑
     outlinePass.selectedObjects = outlinedSelection.current;
 
     const composer = new EffectComposer(renderer);
@@ -89,11 +92,17 @@ function CubeThree() {
     const outputPass = new OutputPass();
     composer.addPass(outputPass);
 
+    // outlined selection 이 없으면 composer(OutlinePass 포함) 대신 plain render
+    // 사용해 프레임 비용 감소. OutlinePass 가 가장 무거운 파이프라인 단계.
     function render() {
       requestAnimationFrame(render);
 
       controls.update();
-      composer.render();
+      if (outlinedSelection.current.length > 0) {
+        composer.render();
+      } else {
+        renderer.render(scene, camera);
+      }
     }
 
     /*

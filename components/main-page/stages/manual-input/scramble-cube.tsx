@@ -73,13 +73,9 @@ const ScrambleCube = () => {
   const { updateStore, updateCube, rotateCube } = useAppStore();
   const { toast } = useToast();
 
-  useEffect(() => {
-    // inited 가드는 두지 않는다. React StrictMode dev 에서 effect 가 두 번 실행되는데
-    // 가드를 두면 (setup → cleanup → 스킵된 setup) 패턴이 되어 핸들러가 제거된 상태로
-    // 남는다. 본 setup 은 idempotent 하게 작성돼 두 번 실행돼도 안전.
+  // 큐비 누적 회전을 초기화하고 solved 상태로 페인트. mount + Reset 버튼 양쪽에서 사용.
+  const resetCubeToInitial = () => {
     const state = useAppStore.getState();
-
-    // 1) 메인 vis 자동 Y 회전 정지 + 회전값 (0,0,0)으로 즉시 스냅.
     if (state.cubeSpinningTimeline.current) {
       state.cubeSpinningTimeline.current.kill();
       state.cubeSpinningTimeline.current = null;
@@ -87,8 +83,8 @@ const ScrambleCube = () => {
     gsap.killTweensOf(state.objects.current.rubiksGroup.rotation);
     state.objects.current.rubiksGroup.rotation.set(0, 0, 0);
 
-    // 2) 모든 큐비를 원본 격자 위치/방향으로 복원. (이전 세션에서 누적된 회전 정리)
-    //    큐비 그룹의 userData.orgIdx = gen-empty-cube 에서 마킹한 초기 인덱스.
+    // 모든 큐비를 원본 격자 위치/방향으로 복원. cubeGroup 의 local 은 (0,0,0) 이고
+    // 그 자식 cube mesh 가 (x-1,y-1,z-1) 로 오프셋되어 있다(gen-empty-cube 참고).
     const rubiksGroup = state.objects.current.rubiksGroup;
     const allCubies: THREE.Group[] = [];
     state.objects.current.scene.traverse((obj) => {
@@ -101,10 +97,6 @@ const ScrambleCube = () => {
         allCubies.push(obj);
       }
     });
-    // cubeGroup 의 local 은 (0,0,0) 이고 그 자식 cube mesh 가 (x-1,y-1,z-1) 로
-    // 오프셋되어 있다(gen-empty-cube 참고). 따라서 reset 은 cubeGroup 의 local 을
-    // identity 로 되돌리고 add() 로 rubiksGroup 에 재부착 (attach 가 아닌 add — world
-    // 보존 없이 우리가 설정한 local 을 그대로 사용).
     const newCubesArray: THREE.Group[] = new Array(27);
     for (const g of allCubies) {
       const idx = (g.userData as { orgIdx: number }).orgIdx;
@@ -120,11 +112,22 @@ const ScrambleCube = () => {
     }
     state.objects.current.cubes = newCubesArray;
 
-    // 3) 큐브 상태를 solved 로 초기화하고 가시화.
+    // 큐브 상태를 solved 로 초기화하고 가시화.
     updateCube(solved_cube, true);
+  };
 
-    // 3) 풀 사이즈로 표시.
+  useEffect(() => {
+    // inited 가드는 두지 않는다. React StrictMode dev 에서 effect 가 두 번 실행되는데
+    // 가드를 두면 (setup → cleanup → 스킵된 setup) 패턴이 되어 핸들러가 제거된 상태로
+    // 남는다. 본 setup 은 idempotent 하게 작성돼 두 번 실행돼도 안전.
+
+    // 1~3) 큐비 초기화 + 색상 reset
+    resetCubeToInitial();
+
+    // 풀 사이즈로 표시.
     updateStore({ cubeScale: 1 });
+
+    const state = useAppStore.getState();
 
     // 4) 메인 vis 캔버스에 포인터 핸들러 연결.
     const canvas = useAppStore.getState().mainCanvas.current;
@@ -343,6 +346,11 @@ const ScrambleCube = () => {
     updateStore({ currentAppStage: "solve" });
   };
 
+  const onReset = () => {
+    if (useAppStore.getState().isDuringRotation) return;
+    resetCubeToInitial();
+  };
+
   return (
     <div
       className="w-full h-full flex flex-col items-center justify-center gap-5 overflow-hidden p-4"
@@ -361,6 +369,9 @@ const ScrambleCube = () => {
         <CubePosAnchor />
       </div>
       <div className="flex items-center gap-3">
+        <Button variant="secondary" onClick={onReset}>
+          Reset
+        </Button>
         <Button onClick={onSolve}>이 상태로 풀기 →</Button>
         <Button variant="ghost" onClick={() => updateStore({ currentAppStage: "deviceselect" })}>
           뒤로
