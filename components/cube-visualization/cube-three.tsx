@@ -21,6 +21,8 @@ function CubeThree() {
     objects,
     camera: { current: camera },
     outlinedSelection,
+    mainCanvas,
+    orbitControls,
   } = useAppStore();
   const refContainer = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene>();
@@ -60,6 +62,8 @@ function CubeThree() {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
     refContainer.current && refContainer.current.appendChild(renderer.domElement);
+    // 매뉴얼 입력 단계에서 메인 vis 캔버스에 포인터 핸들러를 붙이기 위해 노출.
+    mainCanvas.current = renderer.domElement;
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
@@ -69,6 +73,8 @@ function CubeThree() {
     controls.maxDistance = 20;
     controls.enablePan = false;
     // controls.maxPolarAngle = Math.PI / 2;
+    // 매뉴얼 입력 단계에서 비활성화하기 위해 노출.
+    orbitControls.current = controls;
 
     // Set up post-processing
     const outlinePass = new OutlinePass(new THREE.Vector2(width, height), scene, camera);

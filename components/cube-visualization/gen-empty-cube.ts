@@ -39,6 +39,8 @@ export const genEmptyThreeCube = () => {
     const cubeGroup = new THREE.Group();
     cubeGroup.add(cube);
     rubiksGroup.add(cubeGroup);
+    // 매뉴얼 입력 진입 시 큐비를 초기 격자 위치로 복원하기 위한 원본 인덱스 마커.
+    cubeGroup.userData.orgIdx = i;
     cubes.push(cubeGroup);
   }
 

@@ -14,7 +14,13 @@ const useInitApp = () => {
 
     updateCube(solved_cube);
     setTimeout(() => {
-      toggleCubeRotating();
+      // 타이머 발화 시점에 사용자가 이미 진행 단계로 이동했다면 자동 회전을 시작하지
+      // 않는다. 그렇지 않으면 solve 도중 rubiksGroup 회전과 레이어 회전이 겹쳐
+      // 큐비가 어긋남.
+      const stage = useAppStore.getState().currentAppStage;
+      if (stage === "homepage" || stage === "deviceselect") {
+        toggleCubeRotating();
+      }
     }, 2200);
   }, []);
 };

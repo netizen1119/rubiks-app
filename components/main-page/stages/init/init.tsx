@@ -76,6 +76,17 @@ const InitStage = () => {
             {getMainBtnText()}
           </motion.button>
         </Button>
+        {currentAppStage !== "homepage" && (
+          <Button asChild variant="secondary">
+            <motion.button
+              onClick={() => updateStore({ currentAppStage: "manual-input" })}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0, transition: { delay: 1.7 } }}
+            >
+              Manual Input
+            </motion.button>
+          </Button>
+        )}
       </motion.div>
     </motion.div>
   );

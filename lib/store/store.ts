@@ -4,6 +4,7 @@ import { genEmptyThreeCube } from "@/components/cube-visualization/gen-empty-cub
 import { createRef } from "react";
 import * as THREE from "three";
 import { ICubeMoves } from "../moves/moves";
+import { LBLStage } from "../solver/lbl-solver";
 import { updateCube } from "./update-cube";
 import { toggleCubeRotating } from "./toggle-rotate";
 import { updateCameraPos } from "./update-camera";
@@ -29,8 +30,19 @@ const getOutlinedDefault = () => {
   highlighted.current = [];
   return highlighted;
 };
+const getMainCanvasDefault = () => {
+  const c = createRef() as React.MutableRefObject<HTMLCanvasElement | null>;
+  c.current = null;
+  return c;
+};
+type OrbitLike = { enabled: boolean };
+const getOrbitControlsDefault = () => {
+  const c = createRef() as React.MutableRefObject<OrbitLike | null>;
+  c.current = null;
+  return c;
+};
 
-const appStages = ["homepage", "deviceselect", "scan", "solve"] as const;
+const appStages = ["homepage", "deviceselect", "scan", "manual-input", "solve"] as const;
 export type IAppStages = (typeof appStages)[number];
 
 const defaultStore = {
@@ -53,6 +65,8 @@ const defaultStore = {
   nextCubeRotation: null as null | THREE.Euler,
   cubeSolution: [] as string[],
   cubeSolutionStep: null as number | null,
+  solveStages: [] as LBLStage[],
+  currentStageIndex: 0,
   isDuringRotation: false,
   currentAppStage: "homepage" as IAppStages,
   cubeTop: 0,
@@ -60,6 +74,8 @@ const defaultStore = {
   cubeScale: 0.5,
   cubeLeft: 0,
   outlinedSelection: getOutlinedDefault(),
+  mainCanvas: getMainCanvasDefault(),
+  orbitControls: getOrbitControlsDefault(),
 };
 
 type IDefaultData = typeof defaultStore;
