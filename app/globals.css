@@ -77,3 +77,12 @@
     @apply w-2 h-2;
   }
 }
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

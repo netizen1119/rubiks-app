@@ -20,12 +20,12 @@ export const cube_moves = [
   "M",
   "M'",
   "M2",
-  // "E",
-  // "E'",
-  // "E2",
-  // "S",
-  // "S'",
-  // "S2",
+  "E",
+  "E'",
+  "E2",
+  "S",
+  "S'",
+  "S2",
 ] as const;
 
 export type ICubeMoves = (typeof cube_moves)[number];

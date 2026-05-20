@@ -11,6 +11,7 @@ import { updateCameraPos } from "./update-camera";
 import { hideCubeStickers } from "./hide-stickers";
 import initSolveCube from "./init-solve-cube";
 import nextCubeSolveStep from "./next-solve-step";
+import prevCubeSolveStep from "./prev-solve-step";
 import updateCubeScan from "./update-cube-scan";
 import { rotateCube, rotateCube2Part } from "./rotate-cube";
 import updateCubeSide from "./update-cube-side";
@@ -89,6 +90,7 @@ export interface IStore extends IDefaultData {
   rotateCube2Part: (move: ICubeMoves) => void;
   initSolveCube: () => void;
   nextCubeSolveStep: () => void;
+  prevCubeSolveStep: () => void;
   toggleCubeRotating: () => void;
   updateCameraPos: (pos: [number, number, number]) => void;
   hideCubeStickers: () => void;
@@ -103,6 +105,7 @@ export const useAppStore = create<IStore>()((set, get) => ({
   hideCubeStickers: () => hideCubeStickers({ get, set }),
   updateCameraPos: (pos) => updateCameraPos({ get, set, cameraPos: pos }),
   nextCubeSolveStep: () => nextCubeSolveStep({ get, set }),
+  prevCubeSolveStep: () => prevCubeSolveStep({ get, set }),
   toggleCubeRotating: () => toggleCubeRotating({ get, set }),
   updateCubeScan: (scan) => updateCubeScan({ get, set, scan }),
   rotateCube: (move) => rotateCube({ get, set, move }),

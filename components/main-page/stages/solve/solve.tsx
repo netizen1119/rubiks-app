@@ -6,15 +6,31 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { cameraPositions } from "@/lib/maps/camera-positions";
 import { useAppStore } from "@/lib/store/store";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import StageProgress from "./stage-progress";
 import MoveGuide from "./move-guide";
+import StageInfo from "./stage-info";
+import SolveStats from "./stats";
 import gsap from "gsap";
 
+const SPEED_OPTIONS = [0.5, 1, 1.5, 2, 3] as const;
+type Speed = (typeof SPEED_OPTIONS)[number];
+const BASE_TICK_MS = 450; // 1x 기준 tick 간격 (각 회전 phase 소요 ~0.4s + 버퍼)
+
 const SolveCubeStage = () => {
-  const { updateStore, initSolveCube, updateCameraPos, cubeSolutionStep, nextCubeSolveStep } =
-    useAppStore();
+  const {
+    updateStore,
+    initSolveCube,
+    updateCameraPos,
+    cubeSolutionStep,
+    cubeSolution,
+    nextCubeSolveStep,
+    prevCubeSolveStep,
+  } = useAppStore();
   const { toast } = useToast();
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [speed, setSpeed] = useState<Speed>(1);
 
   const inited = useRef(false);
   useEffect(() => {
@@ -49,9 +65,37 @@ const SolveCubeStage = () => {
   }, []);
 
   const finished = cubeSolutionStep === null;
+  // Undo 가능 조건: 진행 중이면 step > 0, 완료 상태면 solution 이 비지 않았을 때.
+  const canUndo = finished
+    ? cubeSolution.length > 0
+    : (cubeSolutionStep ?? 0) > 0;
+
+  // 자동 재생: 일정 간격으로 nextCubeSolveStep 호출.
+  // 각 호출 = 1 phase (preview 또는 commit). isDuringRotation 가드로 안전.
+  // 완료(cubeSolutionStep === null)되면 자동 정지.
+  useEffect(() => {
+    if (!isPlaying) return;
+    if (finished) {
+      setIsPlaying(false);
+      return;
+    }
+    const intervalMs = BASE_TICK_MS / speed;
+    const id = setInterval(() => {
+      const st = useAppStore.getState();
+      if (st.cubeSolutionStep === null) {
+        setIsPlaying(false);
+        return;
+      }
+      st.nextCubeSolveStep();
+    }, intervalMs);
+    return () => clearInterval(id);
+  }, [isPlaying, speed, finished]);
 
   return (
-    <div className="w-full h-full flex justify-center items-center flex-col overflow-hidden gap-3">
+    <div
+      className="w-full h-full flex justify-center items-center flex-col gap-3"
+      style={{ animation: "fade-in 0.4s ease-out" }}
+    >
       <StageProgress />
 
       <div
@@ -63,13 +107,60 @@ const SolveCubeStage = () => {
 
       <MoveGuide />
 
-      <Button
-        onClick={() => nextCubeSolveStep()}
-        disabled={finished}
+      <SolveStats />
+
+      <StageInfo />
+
+      <div className="flex items-center gap-2" style={{ width: `${THREE_WIDTH - 160}px` }}>
+        <Button
+          variant="secondary"
+          onClick={() => prevCubeSolveStep()}
+          disabled={!canUndo}
+          className="px-3"
+        >
+          ← 이전
+        </Button>
+        <Button
+          onClick={() => nextCubeSolveStep()}
+          disabled={finished}
+          className="flex-1"
+        >
+          {finished ? "완료" : "다음 이동 →"}
+        </Button>
+      </div>
+
+      {/* 자동 재생 컨트롤 */}
+      <div
+        className="flex items-center gap-3 text-xs text-muted-foreground"
         style={{ width: `${THREE_WIDTH - 160}px` }}
       >
-        {finished ? "완료" : "다음 이동 →"}
-      </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsPlaying((p) => !p)}
+          disabled={finished}
+          className="px-2"
+        >
+          {isPlaying ? "⏸ 일시정지" : "▶ 자동 재생"}
+        </Button>
+        <div className="flex items-center gap-1 ml-auto">
+          <span className="opacity-70">속도</span>
+          {SPEED_OPTIONS.map((s) => (
+            <button
+              key={s}
+              onClick={() => setSpeed(s)}
+              className={
+                "px-1.5 py-0.5 rounded text-[0.7rem] transition-colors " +
+                (s === speed
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted")
+              }
+            >
+              {s}x
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

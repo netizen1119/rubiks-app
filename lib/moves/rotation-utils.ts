@@ -45,6 +45,14 @@ export const getRotation = (move: ICubeMoves, base: THREE.Euler) => {
       target.x = (Math.PI / 2) * reverse * double;
       preTarget.x = (target.x * halfStepRatio) / double;
       break;
+    case "E":
+      target.y = (Math.PI / 2) * reverse * double;
+      preTarget.y = (target.y * halfStepRatio) / double;
+      break;
+    case "S":
+      target.z = (-Math.PI / 2) * reverse * double;
+      preTarget.z = (target.z * halfStepRatio) / double;
+      break;
   }
 
   return { target, preTarget };
@@ -70,9 +78,21 @@ export const rotateCubeAction = (
 
   for (let x = 0; x < 3; x++) {
     for (let y = 0; y < 3; y++) {
-      if (move[0] === "M") throw new Error("M not implemented");
-
-      const idx = getIdxByPos(getCubePosBySide(move[0] as ICubeSide, { x, y }));
+      // M/E/S 슬라이스 큐비 위치 매핑. 면 무브는 getCubePosBySide 위임.
+      let pos: THREE.Vector3;
+      if (move[0] === "M") {
+        // 가운데 X 슬라이스: x=1, (y,z) 는 면 좌표에서 매핑.
+        pos = new THREE.Vector3(1, y, x);
+      } else if (move[0] === "E") {
+        // 가운데 Y 슬라이스: y=1.
+        pos = new THREE.Vector3(x, 1, y);
+      } else if (move[0] === "S") {
+        // 가운데 Z 슬라이스: z=1.
+        pos = new THREE.Vector3(x, y, 1);
+      } else {
+        pos = getCubePosBySide(move[0] as ICubeSide, { x, y });
+      }
+      const idx = getIdxByPos(pos);
       const cube = cubes[idx];
       rotationGroup.attach(cube);
       toRotateObjects.push(cube);

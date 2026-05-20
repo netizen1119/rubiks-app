@@ -103,11 +103,17 @@ const initSolveCube = ({ get, set }: IStoreFn) => {
     throw new Error("Unsolveable cube");
   }
 
+  // 단계 자동 인식: 입력 큐브가 이미 일부 단계까지 푼 상태면 그 단계 도트는
+  // 완료로 표시하고 다음 비빈 단계부터 진입. (예: 십자만 푼 상태로 들어오면
+  // 도트 ●○○○○○○○ 가 아니라 ●●○○○○○○ 부터 시작)
+  const firstNonEmptyIdx = stages.findIndex((s) => s.moves.length > 0);
+  const initialStageIndex = firstNonEmptyIdx === -1 ? 0 : firstNonEmptyIdx;
+
   set({
     cubeSolution: solution,
     solveStages: stages,
     cubeSolutionStep: 0,
-    currentStageIndex: 0,
+    currentStageIndex: initialStageIndex,
   });
   get().nextCubeSolveStep();
 };

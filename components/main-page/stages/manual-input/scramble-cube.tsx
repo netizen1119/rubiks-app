@@ -33,14 +33,16 @@ const IN_PLANE: Record<string, [Axis, Axis]> = {
   R: ["y", "z"], L: ["y", "z"],
 };
 
-// (rotAxis, slice) → 엔진/시각화 무브.
-// 슬라이스(M/E/S) 없이 면 무브만 사용. 가운데 큐비(slice=0) 의 회전 의도는 무시.
+// (rotAxis, slice) → 엔진/시각화 무브. 슬라이스 포함.
 const MOVE_TABLE: Record<string, { pos: string; neg: string }> = {
   "x|1": { pos: "R'", neg: "R" },
+  "x|0": { pos: "M", neg: "M'" },
   "x|-1": { pos: "L", neg: "L'" },
   "y|1": { pos: "U'", neg: "U" },
+  "y|0": { pos: "E", neg: "E'" },
   "y|-1": { pos: "D", neg: "D'" },
   "z|1": { pos: "F'", neg: "F" },
+  "z|0": { pos: "S'", neg: "S" },
   "z|-1": { pos: "B", neg: "B'" },
 };
 
@@ -134,11 +136,12 @@ const ScrambleCube = () => {
     const prevTouchAction = canvas.style.touchAction;
     canvas.style.touchAction = "none";
 
-    // OrbitControls 도 같은 캔버스에 부착돼 있어 드래그 시 시점이 같이 회전한다.
-    // 매뉴얼 입력 중엔 비활성화.
+    // OrbitControls 는 활성 상태 유지하되, 캡처 단계에서 큐비를 짚었을 때만
+    // stopImmediatePropagation 으로 차단해서 레이어 회전만 일어나도록 한다.
+    // 빈 영역 드래그 시엔 propagation 그대로 통과 → OrbitControls 가 시점 회전 처리.
     const orbit = state.orbitControls.current;
     const prevOrbitEnabled = orbit?.enabled ?? true;
-    if (orbit) orbit.enabled = false;
+    if (orbit) orbit.enabled = true;
 
     const camera = state.camera.current;
     const cubes = state.objects.current.cubes;
@@ -177,7 +180,7 @@ const ScrambleCube = () => {
       return new THREE.Vector2(p1.x - p0.x, p1.y - p0.y);
     };
 
-    // 면 + 큐비 격자 + (NDC공간) 방향 → 회전축/슬라이스. 가운데(slice=0) 는 null.
+    // 면 + 큐비 격자 + (NDC공간) 방향 → 회전축/슬라이스. 가운데(slice=0) 도 허용 (M/E/S).
     const resolveAxisSlice = (
       face: "U" | "D" | "F" | "B" | "R" | "L",
       grid: { gx: number; gy: number; gz: number },
@@ -194,7 +197,6 @@ const ScrambleCube = () => {
       const isA1 = Math.abs(dot1) >= Math.abs(dot2);
       const rotAxis = isA1 ? A2 : A1;
       const slice = gValOf(grid, rotAxis);
-      if (slice === 0) return null; // 슬라이스 무브 제외(면 무브 전용)
       return { rotAxis, slice };
     };
 
@@ -254,15 +256,21 @@ const ScrambleCube = () => {
       return { face: hit.face, grid, center: hit.center };
     };
 
+    // capture 단계로 등록하여 OrbitControls(bubble)보다 먼저 실행.
+    // 큐비를 짚었으면 stopImmediatePropagation 으로 OrbitControls 차단,
+    // 미스 시 통과시켜 시점 회전이 일어나게 한다.
     const onDown = (e: PointerEvent) => {
       if (useAppStore.getState().isDuringRotation) return;
-      startX = e.clientX;
-      startY = e.clientY;
       const hit = pickHit(e.clientX, e.clientY);
       if (!hit) {
+        // 빈 영역 → OrbitControls 가 시점 회전 처리. 본 핸들러는 아무것도 안 함.
         pending = null;
         return;
       }
+      // 큐비 hit → 레이어 회전 의도. OrbitControls 가 받지 않도록 차단.
+      e.stopImmediatePropagation();
+      startX = e.clientX;
+      startY = e.clientY;
       pending = {
         face: hit.face,
         grid: getGridPos(hit.group),
@@ -305,12 +313,13 @@ const ScrambleCube = () => {
       }
     };
 
-    canvas.addEventListener("pointerdown", onDown);
+    // pointerdown 은 capture 단계로 등록(OrbitControls 보다 먼저 받음).
+    canvas.addEventListener("pointerdown", onDown, true);
     canvas.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
 
     return () => {
-      canvas.removeEventListener("pointerdown", onDown);
+      canvas.removeEventListener("pointerdown", onDown, true);
       canvas.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       canvas.style.pointerEvents = prevPointerEvents;
@@ -335,7 +344,10 @@ const ScrambleCube = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center gap-5 overflow-hidden p-4">
+    <div
+      className="w-full h-full flex flex-col items-center justify-center gap-5 overflow-hidden p-4"
+      style={{ animation: "fade-in 0.4s ease-out" }}
+    >
       <h1 className="text-lg font-semibold text-foreground">큐브를 스크램블하세요</h1>
       <p className="text-xs text-muted-foreground -mt-3 text-center max-w-[22rem]">
         조각 면 위에 커서를 올리면 회전할 층이 강조됩니다. 그 방향으로 드래그해 회전.
