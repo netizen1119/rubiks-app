@@ -15,14 +15,17 @@ const InitStage = () => {
   const { currentAppStage, updateStore, deviceId, toggleCubeRotating, hideCubeStickers } = useAppStore();
   const [seconds, setSeconds] = useState(informationButtonLockDuration / 1000);
 
-  const mainBtnClick = () => {
-    if (currentAppStage === "homepage") {
-      updateStore({ currentAppStage: "deviceselect" });
+  // 홈에서 풀이 모드(learn/fast)를 고르고 deviceselect 로 진행.
+  const chooseMode = (mode: "learn" | "fast") => {
+    updateStore({ solveMode: mode, currentAppStage: "deviceselect" });
 
-      // Set the countdown for information/deviceselet screen
-      const interval = setInterval(() => setSeconds((seconds) => seconds - 1), 1000);
-      setTimeout(() => clearInterval(interval), informationButtonLockDuration + 200);
-    } else if (currentAppStage === "deviceselect" && deviceId) {
+    // Set the countdown for information/deviceselet screen
+    const interval = setInterval(() => setSeconds((seconds) => seconds - 1), 1000);
+    setTimeout(() => clearInterval(interval), informationButtonLockDuration + 200);
+  };
+
+  const mainBtnClick = () => {
+    if (currentAppStage === "deviceselect" && deviceId) {
       updateStore({ currentAppStage: "scan" });
       toggleCubeRotating();
       setTimeout(() => {
@@ -32,7 +35,6 @@ const InitStage = () => {
   };
 
   const getMainBtnText = () => {
-    if (currentAppStage === "homepage") return "Continue";
     if (seconds > 0) return `Scan (${seconds})`;
     return "Scan";
   };
@@ -60,32 +62,54 @@ const InitStage = () => {
           },
         }}
       >
-        {currentAppStage !== "homepage" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <DeviceSelect />
-          </motion.div>
-        )}
-        <Button asChild>
-          <motion.button
-            onClick={mainBtnClick}
-            layout={seconds > 0}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0, transition: { delay: 1.6 } }}
-            disabled={currentAppStage === "deviceselect" && !deviceId && seconds > 0}
-          >
-            {getMainBtnText()}
-          </motion.button>
-        </Button>
-        {currentAppStage !== "homepage" && (
-          <Button asChild variant="secondary">
-            <motion.button
-              onClick={() => updateStore({ currentAppStage: "manual-input" })}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0, transition: { delay: 1.7 } }}
-            >
-              Manual Input
-            </motion.button>
-          </Button>
+        {currentAppStage === "homepage" ? (
+          // 홈: 풀이 모드 선택. 대다수가 입문자이므로 "차근차근 배우기"를 기본 강조.
+          <>
+            <Button asChild>
+              <motion.button
+                onClick={() => chooseMode("learn")}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: 1.6 } }}
+              >
+                차근차근 배우기
+              </motion.button>
+            </Button>
+            <Button asChild variant="secondary">
+              <motion.button
+                onClick={() => chooseMode("fast")}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: 1.7 } }}
+              >
+                빠르게 풀이 보기
+              </motion.button>
+            </Button>
+          </>
+        ) : (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <DeviceSelect />
+            </motion.div>
+            <Button asChild>
+              <motion.button
+                onClick={mainBtnClick}
+                layout={seconds > 0}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: 1.6 } }}
+                disabled={currentAppStage === "deviceselect" && !deviceId && seconds > 0}
+              >
+                {getMainBtnText()}
+              </motion.button>
+            </Button>
+            <Button asChild variant="secondary">
+              <motion.button
+                onClick={() => updateStore({ currentAppStage: "manual-input" })}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: 1.7 } }}
+              >
+                Manual Input
+              </motion.button>
+            </Button>
+          </>
         )}
       </motion.div>
     </motion.div>

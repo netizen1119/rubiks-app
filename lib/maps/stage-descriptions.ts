@@ -81,6 +81,41 @@ export const stageDescriptions: StageDescription[] = [
   },
 ];
 
-// stageIndex 로 조회.
-export const getStageDescription = (idx: number): StageDescription | undefined =>
-  stageDescriptions[idx];
+// "빠르게 풀이 보기"(Thistlethwaite 4단계) 모드용 설명.
+// 입문자보다 큐브를 아는 사용자가 대상이라 간결한 개념 위주.
+export const fastStageDescriptions: StageDescription[] = [
+  {
+    stageIndex: 0,
+    shortTitle: "1단계 — 모서리 방향",
+    goal: "모든 모서리(엣지)를 F/B 면 회전 없이도 맞출 수 있는 방향으로 정렬 (G1 진입).",
+    approach: "전체 HTM 탐색으로 12개 엣지의 방향(EO)을 한 번에 맞춘다.",
+    tip: "이후 단계에서 F·B 는 반회전(F2/B2)만 사용 가능해진다.",
+  },
+  {
+    stageIndex: 1,
+    shortTitle: "2단계 — 도미노 환원",
+    goal: "코너 방향(CO)과 중간층(E-슬라이스) 엣지를 정리해 도미노 상태(G2)로.",
+    approach: "U,D 자유 + L,R,F2,B2 제한 집합 탐색으로 코너 방향과 E 엣지를 맞춘다.",
+    tip: "도미노 상태가 되면 윗·아랫면만으로 큐브를 다룰 수 있다.",
+  },
+  {
+    stageIndex: 2,
+    shortTitle: "3단계 — 그룹 정렬",
+    goal: "조각들을 반회전(180°)만으로 풀 수 있는 그룹(G3)으로 배치.",
+    approach: "U,D 자유 + F2,B2,L2,R2 탐색으로 코너/엣지 순열을 짝수 그룹에 맞춘다.",
+  },
+  {
+    stageIndex: 3,
+    shortTitle: "4단계 — 완성",
+    goal: "반회전만으로 큐브를 완전히 복원 (G4 = 솔브드).",
+    approach: "U2,D2,L2,R2,F2,B2 만으로 남은 순열을 풀어 완성한다.",
+    tip: "이 단계는 180° 회전만 쓰므로 보기에 깔끔하게 마무리된다.",
+  },
+];
+
+// stageIndex + 모드로 조회. fast 모드는 4단계 설명 사용.
+export const getStageDescription = (
+  idx: number,
+  mode: "learn" | "fast" = "learn"
+): StageDescription | undefined =>
+  (mode === "fast" ? fastStageDescriptions : stageDescriptions)[idx];

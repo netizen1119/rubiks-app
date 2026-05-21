@@ -1,11 +1,14 @@
 # 프로젝트 컨텍스트
 
 ## 현재 상태
-2차 작업 완료 (2026-05-20). 자세한 진행 내역은 다음 문서 참고:
-- `HANDOVER_v5.md` — 2차 작업 결과 (가장 최신)
+3차 작업: 풀이 수준 선택 기능 완료 (2026-05-21). 자세한 진행 내역은 다음 문서 참고:
+- `HANDOVER_v6.md` — 3차 작업 결과 (가장 최신, 수준 선택 → 모드별 솔버 분기)
+- `HANDOVER_v5.md` — 2차 작업 결과
 - `HANDOVER_v4.md` — 1차 완성 시점 (LBL 솔버 + 매뉴얼 입력)
-- `CLAUDE_CODE_PLAN_v2.md` — 2차 작업 계획 + 진행 체크박스
+- `CLAUDE_CODE_PLAN_v2.md` — 2차/3차 작업 계획 + 진행 체크박스
 - `CLAUDE_CODE_PLAN.md` — 1차 작업 계획
+
+다음 진행 예정: solve 도중 모드 전환 토글 (HANDOVER_v6 §5-1).
 
 ## 기술 스택
 Next.js 14, React 18, Three.js, Zustand, TypeScript strict, Tailwind, GSAP
@@ -38,8 +41,14 @@ npm test        # 28 케이스 단위 테스트
 npx tsc --noEmit  # 타입체크
 ```
 
+## 풀이 모드 (3차 추가)
+홈에서 `solveMode` 선택 → init-solve-cube 가 분기:
+- **learn** (차근차근 배우기, 기본): `solveLBL` 8단계, ~98수, 풀 설명.
+- **fast** (빠르게 풀이 보기): `solveFast`(Thistlethwaite 래퍼) 4단계, ~31수. fast 실패 시 learn 폴백.
+둘 다 면 무브만 출력 → 동일 시각화/정규화 파이프라인 공유.
+
 ## 주요 단계 (사용자 흐름)
-1. **homepage** → Continue → **deviceselect**
+1. **homepage** → 「차근차근 배우기 / 빠르게 풀이 보기」 → **deviceselect**
 2. **deviceselect** → Manual Input → **manual-input**
    (스캔 경로는 카메라 필요 — 현재 미진행)
 3. **manual-input** → 드래그로 큐브 섞기 → "이 상태로 풀기 →" → **solve**

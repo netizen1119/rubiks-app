@@ -26,11 +26,15 @@ const SolveCubeStage = () => {
     cubeSolution,
     nextCubeSolveStep,
     prevCubeSolveStep,
+    solveMode,
   } = useAppStore();
   const { toast } = useToast();
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [speed, setSpeed] = useState<Speed>(1);
+  // 빠른 모드는 풀이를 빨리 훑어보려는 사용자가 대상이라 기본 속도를 높게.
+  const [speed, setSpeed] = useState<Speed>(() =>
+    useAppStore.getState().solveMode === "fast" ? 2 : 1
+  );
 
   const inited = useRef(false);
   useEffect(() => {
@@ -147,6 +151,21 @@ const SolveCubeStage = () => {
       className="w-full h-full flex justify-center items-center flex-col gap-3"
       style={{ animation: "fade-in 0.4s ease-out" }}
     >
+      <div className="flex items-center gap-2">
+        <span
+          className={
+            "px-2 py-0.5 rounded-full text-[0.7rem] font-medium " +
+            (solveMode === "fast"
+              ? "bg-amber-500/15 text-amber-400"
+              : "bg-emerald-500/15 text-emerald-400")
+          }
+        >
+          {solveMode === "fast"
+            ? `⚡ 빠른 풀이 · ${cubeSolution.length}수`
+            : `📚 차근차근 · ${cubeSolution.length}수`}
+        </span>
+      </div>
+
       <StageProgress />
 
       <div

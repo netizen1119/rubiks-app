@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import { fcube_to_ifcube } from "./fcube-to-ifcube";
+import { fcube_to_ifcube } from "./fcube-to-ifcube.ts";
 
 type Predicate = (pos: Vector3) => boolean;
 

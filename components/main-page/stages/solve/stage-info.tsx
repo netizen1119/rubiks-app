@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils";
 
 // 현재 단계의 풀이 원리/대표 알고리즘을 접을 수 있는 카드로 표시.
 const StageInfo = () => {
-  const { currentStageIndex } = useAppStore();
+  const { currentStageIndex, solveMode } = useAppStore();
   const [open, setOpen] = useState(false);
 
-  const desc = getStageDescription(currentStageIndex);
+  const desc = getStageDescription(currentStageIndex, solveMode);
   if (!desc) return null;
 
   return (

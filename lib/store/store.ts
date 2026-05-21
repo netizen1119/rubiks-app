@@ -72,6 +72,9 @@ const defaultStore = {
   cubeSolutionStep: null as number | null,
   solveStages: [] as LBLStage[],
   currentStageIndex: 0,
+  // 풀이 모드: "learn" = 단계별 LBL(이해 학습), "fast" = Thistlethwaite 최단 풀이.
+  // 홈에서 선택, init-solve-cube 가 분기. updateStore 로 변경 가능.
+  solveMode: "learn" as "learn" | "fast",
   isDuringRotation: false,
   currentAppStage: "homepage" as IAppStages,
   cubeTop: 0,
