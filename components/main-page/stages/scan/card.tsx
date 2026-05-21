@@ -32,7 +32,10 @@ const ScanCard = () => {
   };
 
   const onSolveClick = () => {
-    updateStore({ currentAppStage: "solve" });
+    // solve 로 넘어가며 스캔 카메라 스트림 정지.
+    const stream = useAppStore.getState().scanStream;
+    stream?.getTracks().forEach((t) => t.stop());
+    updateStore({ currentAppStage: "solve", scanStream: null });
   };
 
   const disabledScanConfirmBtn = () => {

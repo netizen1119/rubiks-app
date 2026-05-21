@@ -6,6 +6,7 @@ import { useGetScannedColors } from "../../../../lib/use-get-scanned-colors";
 import { useAppStore } from "@/lib/store/store";
 import { motion } from "framer-motion";
 import ScanCard from "./card";
+import { useToast } from "@/components/ui/use-toast";
 
 const ScanCubeStage = () => {
   const [video, setVideo] = useState<HTMLVideoElement>();
@@ -13,6 +14,7 @@ const ScanCubeStage = () => {
   const [streamStared, setStreamStarted] = useState(false);
 
   const { scanReversed, previewReversed, scanSize, deviceId, updateCubeScan, updateStore } = useAppStore();
+  const { toast } = useToast();
 
   const getScannedColors = useGetScannedColors({ video, canvas });
   useScanRefresh({ getScannedColors });
@@ -29,20 +31,36 @@ const ScanCubeStage = () => {
     setCanvas(canvasEl);
 
     const fn = async () => {
-      if (streamStared) {
-        videoEl.play();
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
+      // 제약은 ideal 로만 — exact(height 1280 / 9:16)는 일반 웹캠/데스크탑에서
+      // OverconstrainedError 로 실패해 영상이 안 뜨던 원인. 실패 시 단순 제약으로 폴백.
+      const preferred: MediaStreamConstraints = {
         video: {
-          deviceId: { exact: deviceId },
-          aspectRatio: 9 / 16,
-          height: { exact: 1280 },
+          deviceId: deviceId ? { ideal: deviceId } : undefined,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
         },
-      });
+        audio: false,
+      };
 
-      videoEl.srcObject = stream;
-      videoEl.play();
+      try {
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(preferred);
+        } catch {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        }
+        videoEl.srcObject = stream;
+        // 단계 이탈 시 카메라를 끌 수 있도록 스트림 보관.
+        updateStore({ scanStream: stream });
+        await videoEl.play();
+      } catch (err) {
+        toast({
+          variant: "destructive",
+          title: "카메라를 열 수 없습니다",
+          description: "카메라 권한, 그리고 다른 앱이 카메라를 쓰고 있지 않은지 확인해주세요.",
+          duration: Infinity,
+        });
+      }
     };
 
     fn();
@@ -56,8 +74,21 @@ const ScanCubeStage = () => {
     }
   };
 
+  // 스캔 화면에서 나갈 때 카메라 스트림을 정지하고 deviceselect 로 복귀.
+  const onBack = () => {
+    const stream = useAppStore.getState().scanStream;
+    stream?.getTracks().forEach((t) => t.stop());
+    updateStore({ scanStream: null, isScanRefreshing: false, currentAppStage: "deviceselect" });
+  };
+
   return (
     <div>
+      <button
+        onClick={onBack}
+        className="fixed top-4 left-4 z-50 rounded-md bg-black/60 px-3 py-1.5 text-sm text-white/90 backdrop-blur-sm hover:bg-black/75 transition-colors"
+      >
+        ← 뒤로
+      </button>
       <motion.div
         className="flex w-screen h-screen relative  items-center justify-center"
         initial={{ opacity: 0 }}

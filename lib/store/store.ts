@@ -59,7 +59,9 @@ const defaultStore = {
   highlight: undefined as ICubeSide | undefined,
   cube: Array(54).fill("X").join(""),
   currentScanFace: -1 as number | null,
-  scanReversed: false,
+  // 웹캠을 거울(셀카)처럼 좌우 반전 표시. 미리보기 flip + 스캔 샘플링 X좌표 재매핑(reverseCord)을
+  // 함께 적용해 거울로 보이면서도 면 인식은 정확하게 유지된다.
+  scanReversed: true,
   deviceId: "",
   previewReversed: false,
   devScanPreviewShow: true,
@@ -85,6 +87,8 @@ const defaultStore = {
   outlinedSelection: getOutlinedDefault(),
   mainCanvas: getMainCanvasDefault(),
   orbitControls: getOrbitControlsDefault(),
+  // 스캔 단계의 카메라 스트림 — 단계를 떠날 때 트랙을 정지해 카메라를 끄기 위해 보관.
+  scanStream: null as MediaStream | null,
 };
 
 type IDefaultData = typeof defaultStore;

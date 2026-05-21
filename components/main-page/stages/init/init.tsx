@@ -109,6 +109,15 @@ const InitStage = () => {
                 Manual Input
               </motion.button>
             </Button>
+            <Button asChild variant="ghost">
+              <motion.button
+                onClick={() => updateStore({ currentAppStage: "homepage" })}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: 1.8 } }}
+              >
+                ← 뒤로
+              </motion.button>
+            </Button>
           </>
         )}
       </motion.div>
