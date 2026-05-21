@@ -90,16 +90,19 @@
 
 ## 5. 남은 작업
 
-### 5-1. (다음 진행 예정) Solve 도중 모드 전환 토글
-- **목표**: solve 화면에서 learn ↔ fast 즉시 전환 (한 번의 홈 선택이 막다른 길이 안 되게).
-- **난점**: 회전이 큐비 **지오메트리에 누적**되는 구조(`rotate-cube.ts`/rotation-utils).
-  전환하려면 현재 시각 상태를 **스크램블로 복원**해야 하는데, 스크램블 지오메트리
-  스냅샷이 없고 `cube` 문자열만 보존됨(`updateCube` 는 스티커 색만 페인트).
-- **구현 방향(검토안)**: 실행된 무브의 **역무브 되감기**로 step 0(스크램블)까지 복원 후
-  `solveMode` 변경 + `initSolveCube` 재실행. 기존 `prevCubeSolveStep` 역무브 로직 재사용.
-  - 트레이드오프: 되감기 애니메이션 비용(많이 진행된 상태면 다수 무브).
-  - 대안: 역무브를 무애니메이션(instant)으로 적용하는 경로 추가 검토.
-- **영향 범위**: `solve.tsx`(토글 UI + 재초기화 흐름), 필요 시 `prev-solve-step.ts`/rotation-utils(instant 옵션).
+### 5-1. Solve 도중 모드 전환 토글 — **완료 (2026-05-21)**
+- **목표**: solve 화면에서 learn ↔ fast 전환 (한 번의 홈 선택이 막다른 길이 안 되게).
+- **구현 방식**: 문자 그대로의 "스크램블 되감기" 대신 **"현재 진행 위치에서 새 모드로 이어 풀기"**.
+  - 되감기는 무브당 0.4s 애니메이션이라 끝까지 간 LBL(98수) 되감으면 ~44s → 비현실적.
+  - 현재 시각 큐브의 논리 상태 = `applyMoves(scramble, committed 무브)`. 이를 새 모드로
+    재풀이하면 결과가 **현재 지오메트리에 그대로 적용**됨(되감기 0, 즉시). 진행도 보존.
+  - 기존 normalize→solve→relabel 파이프라인 재사용 → 저위험. rotation-utils 변경 불필요.
+- **clean boundary 처리**: 전환 시 preview 진행 중(`nextCubeRotation !== null`)이면 commit 으로
+  마무리(`nextCubeSolveStep`) 후 `requestAnimationFrame` 으로 회전 종료 대기 → 전환.
+- **이미 완성 상태 전환**: 빈 풀이는 throw 되므로, `isFullySolved` 면 재풀이 없이 완료 상태로.
+- **신규**: `lib/store/switch-solve-mode.ts` (`switchSolveMode` 액션).
+- **수정**: `lib/store/store.ts`(액션 등록), `components/.../solve/solve.tsx`(세그먼트 토글 UI + 비동기 전환 핸들러).
+- **검증**: learn↔fast 양방향 임의 진행 위치 30케이스 0실패, tsc PASS, npm test 28/28, dev 컴파일 OK.
 
 ### 5-2. 기타 (CLAUDE_CODE_PLAN_v2 잔여)
 - 2-4 연습/힌트 모드 (능동 학습) — 미진행

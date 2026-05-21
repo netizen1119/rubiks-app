@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { cameraPositions } from "@/lib/maps/camera-positions";
 import { useAppStore } from "@/lib/store/store";
+import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import StageProgress from "./stage-progress";
 import MoveGuide from "./move-guide";
 import StageInfo from "./stage-info";
 import SolveStats from "./stats";
+import OrientationLabels from "./orientation-labels";
 import gsap from "gsap";
 
 const SPEED_OPTIONS = [0.5, 1, 1.5, 2, 3] as const;
@@ -91,18 +93,36 @@ const SolveCubeStage = () => {
       originalCameraPos = camera.position.clone();
     }, 700);
 
+    // 복귀 애니메이션 핸들. 위치를 직선 보간하면 시작/끝이 같은 구 위에 있어도
+    // 직선이 구 내부를 통과해 카메라가 큐브 쪽으로 파고들어 "확대→축소"가 보인다.
+    // → 방향은 구면 보간(nlerp), 반경은 선형 보간해 거리를 유지한다.
+    let returnTween: gsap.core.Tween | null = null;
     const onOrbitStart = () => {
-      gsap.killTweensOf(camera.position);
+      if (returnTween) {
+        returnTween.kill();
+        returnTween = null;
+      }
     };
     const onOrbitEnd = () => {
-      gsap.killTweensOf(camera.position);
-      gsap.to(camera.position, {
-        x: originalCameraPos.x,
-        y: originalCameraPos.y,
-        z: originalCameraPos.z,
+      if (returnTween) returnTween.kill();
+      const startDir = camera.position.clone().normalize();
+      const startR = camera.position.length();
+      const endDir = originalCameraPos.clone().normalize();
+      const endR = originalCameraPos.length();
+      const state = { t: 0 };
+      returnTween = gsap.to(state, {
+        t: 1,
         duration: 0.6,
         ease: "power2.inOut",
-        onUpdate: () => camera.lookAt(0, 0, 0),
+        onUpdate: () => {
+          const dir = startDir.clone().lerp(endDir, state.t).normalize();
+          const r = startR + (endR - startR) * state.t;
+          camera.position.copy(dir.multiplyScalar(r));
+          camera.lookAt(0, 0, 0);
+        },
+        onComplete: () => {
+          returnTween = null;
+        },
       });
     };
     orbit.addEventListener("start", onOrbitStart);
@@ -115,6 +135,7 @@ const SolveCubeStage = () => {
       orbit.removeEventListener("start", onOrbitStart);
       orbit.removeEventListener("end", onOrbitEnd);
       orbit.enabled = prevOrbitEnabled;
+      if (returnTween) returnTween.kill();
       gsap.killTweensOf(camera.position);
     };
   }, []);
@@ -146,31 +167,79 @@ const SolveCubeStage = () => {
     return () => clearInterval(id);
   }, [isPlaying, speed, finished]);
 
+  // 도중 모드 전환: 되감지 않고 현재 진행 위치에서 새 모드로 이어 풀기.
+  // 진행 중(preview) 무브가 있으면 commit 으로 clean boundary 도달 후 전환.
+  const switchMode = (mode: "learn" | "fast") => {
+    const st = useAppStore.getState();
+    if (st.solveMode === mode || st.isDuringRotation) return;
+    setIsPlaying(false);
+    setSpeed(mode === "fast" ? 2 : 1);
+
+    const finish = () => {
+      try {
+        useAppStore.getState().switchSolveMode(mode);
+      } catch {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "모드 전환 중 풀이 생성에 실패했습니다.",
+          duration: Infinity,
+        });
+      }
+    };
+
+    if (st.nextCubeRotation !== null) {
+      // preview 상태 → 진행 중 무브를 commit 한 뒤 회전 종료를 기다려 전환.
+      st.nextCubeSolveStep();
+      const waitClean = () => {
+        const s = useAppStore.getState();
+        if (s.isDuringRotation || s.nextCubeRotation !== null) requestAnimationFrame(waitClean);
+        else finish();
+      };
+      requestAnimationFrame(waitClean);
+    } else {
+      finish();
+    }
+  };
+
   return (
     <div
       className="w-full h-full flex justify-center items-center flex-col gap-3"
       style={{ animation: "fade-in 0.4s ease-out" }}
     >
-      <div className="flex items-center gap-2">
-        <span
-          className={
-            "px-2 py-0.5 rounded-full text-[0.7rem] font-medium " +
-            (solveMode === "fast"
-              ? "bg-amber-500/15 text-amber-400"
-              : "bg-emerald-500/15 text-emerald-400")
-          }
-        >
-          {solveMode === "fast"
-            ? `⚡ 빠른 풀이 · ${cubeSolution.length}수`
-            : `📚 차근차근 · ${cubeSolution.length}수`}
-        </span>
+      <OrientationLabels />
+
+      {/* 모드 전환 토글 — 클릭 시 현재 위치에서 해당 모드로 이어 풀기. */}
+      <div className="flex items-center gap-2 text-xs">
+        <div className="flex rounded-full border border-border overflow-hidden">
+          {([
+            { m: "learn" as const, label: "📚 차근차근" },
+            { m: "fast" as const, label: "⚡ 빠르게" },
+          ]).map(({ m, label }) => (
+            <button
+              key={m}
+              onClick={() => switchMode(m)}
+              className={cn(
+                "px-2.5 py-0.5 transition-colors",
+                solveMode === m
+                  ? m === "fast"
+                    ? "bg-amber-500/20 text-amber-300"
+                    : "bg-emerald-500/20 text-emerald-300"
+                  : "text-muted-foreground hover:bg-muted"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <span className="text-muted-foreground">{cubeSolution.length}수</span>
       </div>
 
       <StageProgress />
 
       <div
         className="flex items-center justify-center"
-        style={{ width: `${THREE_WIDTH}px`, height: `${THREE_HEIGHT - 160}px` }}
+        style={{ width: `${THREE_WIDTH}px`, height: `${THREE_HEIGHT - 80}px` }}
       >
         <CubePosAnchor />
       </div>

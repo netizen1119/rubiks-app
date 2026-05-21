@@ -157,18 +157,35 @@ const ScrambleCube = () => {
     // 빈 영역 드래그 종료 시 부드럽게 복귀.
     const camera = state.camera.current;
     const originalCameraPos = camera.position.clone();
+    // 위치 직선 보간은 구 내부를 통과해 복귀 중 "확대→축소"가 보인다.
+    // → 방향은 구면 보간(nlerp), 반경은 선형 보간해 거리를 유지.
+    let returnTween: gsap.core.Tween | null = null;
     const onOrbitStart = () => {
-      gsap.killTweensOf(camera.position);
+      if (returnTween) {
+        returnTween.kill();
+        returnTween = null;
+      }
     };
     const onOrbitEnd = () => {
-      gsap.killTweensOf(camera.position);
-      gsap.to(camera.position, {
-        x: originalCameraPos.x,
-        y: originalCameraPos.y,
-        z: originalCameraPos.z,
+      if (returnTween) returnTween.kill();
+      const startDir = camera.position.clone().normalize();
+      const startR = camera.position.length();
+      const endDir = originalCameraPos.clone().normalize();
+      const endR = originalCameraPos.length();
+      const tw = { t: 0 };
+      returnTween = gsap.to(tw, {
+        t: 1,
         duration: 0.6,
         ease: "power2.inOut",
-        onUpdate: () => camera.lookAt(0, 0, 0),
+        onUpdate: () => {
+          const dir = startDir.clone().lerp(endDir, tw.t).normalize();
+          const r = startR + (endR - startR) * tw.t;
+          camera.position.copy(dir.multiplyScalar(r));
+          camera.lookAt(0, 0, 0);
+        },
+        onComplete: () => {
+          returnTween = null;
+        },
       });
     };
     if (orbit) {
@@ -371,6 +388,7 @@ const ScrambleCube = () => {
         orbit.removeEventListener("end", onOrbitEnd);
         orbit.enabled = prevOrbitEnabled;
       }
+      if (returnTween) returnTween.kill();
       gsap.killTweensOf(camera.position);
       setOutlinedSlice(null, null);
     };

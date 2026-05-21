@@ -8,7 +8,7 @@
 - `CLAUDE_CODE_PLAN_v2.md` — 2차/3차 작업 계획 + 진행 체크박스
 - `CLAUDE_CODE_PLAN.md` — 1차 작업 계획
 
-다음 진행 예정: solve 도중 모드 전환 토글 (HANDOVER_v6 §5-1).
+solve 도중 모드 전환 토글도 완료 — 되감기 없이 현재 위치에서 이어 풀기 (HANDOVER_v6 §5-1).
 
 ## 기술 스택
 Next.js 14, React 18, Three.js, Zustand, TypeScript strict, Tailwind, GSAP
