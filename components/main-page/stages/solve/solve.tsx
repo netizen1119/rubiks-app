@@ -29,6 +29,7 @@ const SolveCubeStage = () => {
     nextCubeSolveStep,
     prevCubeSolveStep,
     solveMode,
+    cubeScale,
   } = useAppStore();
   const { toast } = useToast();
 
@@ -42,8 +43,6 @@ const SolveCubeStage = () => {
   useEffect(() => {
     if (inited.current) return;
     inited.current = true;
-
-    updateStore({ cubeScale: 1 });
 
     // 메인 vis rubiksGroup 의 진행 중 Y축 자동 회전(및 어떤 gsap 트윈이든)을 즉시
     // 정지하고 회전값을 (0,0,0)으로 스냅. 점진적 감속 도중에 레이어 회전이 시작되면
@@ -139,6 +138,18 @@ const SolveCubeStage = () => {
       gsap.killTweensOf(camera.position);
     };
   }, []);
+
+  // 뷰포트 크기에 맞춰 큐브 스케일 자동 조절 (작은 화면에서 축소, resize 대응).
+  // 큐브 캔버스(400px) + 상/하 UI 가 함께 들어가도록 가로/세로 양쪽 제약을 본다.
+  useEffect(() => {
+    const apply = () => {
+      const s = Math.min(window.innerWidth / 520, window.innerHeight / 720, 1);
+      updateStore({ cubeScale: Math.max(0.5, s) });
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    return () => window.removeEventListener("resize", apply);
+  }, [updateStore]);
 
   const finished = cubeSolutionStep === null;
   // Undo 가능 조건: 진행 중이면 step > 0, 완료 상태면 solution 이 비지 않았을 때.
@@ -239,7 +250,10 @@ const SolveCubeStage = () => {
 
       <div
         className="flex items-center justify-center"
-        style={{ width: `${THREE_WIDTH}px`, height: `${THREE_HEIGHT - 80}px` }}
+        style={{
+          width: `${THREE_WIDTH * cubeScale}px`,
+          height: `${(THREE_HEIGHT - 80) * cubeScale}px`,
+        }}
       >
         <CubePosAnchor />
       </div>

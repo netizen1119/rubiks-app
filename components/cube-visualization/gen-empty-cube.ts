@@ -23,7 +23,8 @@ export const genEmptyThreeCube = () => {
       new THREE.MeshStandardMaterial({
         color: colorMapThree.X,
         side: THREE.DoubleSide,
-        // roughness: 0.8,
+        roughness: 0.55, // 큐비 본체(검은 플라스틱)에 약한 광택 → 가장자리 입체감.
+        metalness: 0.05,
         toneMapped: false,
         emissiveIntensity: 0,
         transparent: true,
@@ -101,7 +102,8 @@ export const genEmptyThreeCube = () => {
           transparent: true,
           opacity: 0,
           side: THREE.DoubleSide,
-          roughness: 0.8,
+          roughness: 0.45, // 0.8→0.45: 방향광에 부드러운 광택(반사)이 생겨 평면감 완화.
+          metalness: 0.05,
           toneMapped: false,
           emissiveIntensity: 0,
         })

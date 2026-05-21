@@ -36,12 +36,19 @@ function CubeThree() {
     const height = THREE_HEIGHT;
 
     const scene = objects.current.scene;
-    const ambientLight = new THREE.AmbientLight("white", 4);
+    // 은은한 기본광(앰비언트) + 비스듬한 방향광으로 면별 명암 차이를 만들어 입체감/거리감을 살린다.
+    const ambientLight = new THREE.AmbientLight("white", 2.4);
     scene.add(ambientLight);
 
-    const light = new THREE.DirectionalLight("white", 2);
-    light.position.set(1, 1, 1);
+    // 주광: 위-앞-오른쪽에서 비스듬히 → 윗면 밝고 측면 점점 어두워지는 그라데이션 + 광택 하이라이트.
+    const light = new THREE.DirectionalLight("white", 3);
+    light.position.set(4, 7, 6);
     scene.add(light);
+
+    // 보조광: 반대편 약하게 → 그림자면이 새까매지지 않게 채움.
+    const fillLight = new THREE.DirectionalLight("white", 0.8);
+    fillLight.position.set(-5, -2, -4);
+    scene.add(fillLight);
 
     // Load cubes into the scene
     scene.add(objects.current.rubiksGroup);
@@ -60,6 +67,9 @@ function CubeThree() {
     });
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // HiDPI/레티나 대응: 디바이스 픽셀 비율을 반영해 더 선명하게 렌더(최대 2배로 캡 — 성능 보호).
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    renderer.setPixelRatio(pixelRatio);
     renderer.setSize(width, height);
     refContainer.current && refContainer.current.appendChild(renderer.domElement);
     // 매뉴얼 입력 단계에서 메인 vis 캔버스에 포인터 핸들러를 붙이기 위해 노출.
@@ -86,6 +96,8 @@ function CubeThree() {
     outlinePass.selectedObjects = outlinedSelection.current;
 
     const composer = new EffectComposer(renderer);
+    composer.setPixelRatio(pixelRatio);
+    composer.setSize(width, height);
     composer.addPass(new RenderPass(scene, camera));
     composer.addPass(outlinePass);
 
