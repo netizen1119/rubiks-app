@@ -209,10 +209,6 @@ const CORNERS: CornerDef[] = [
 
 const toMoves = (s: string): string[] => s.trim().split(/ +/).filter(Boolean);
 
-// U 위에서 본 측면 인접(시계: F→R→B→L).
-const RIGHT_OF: Record<string, FaceLetter> = { F: "R", R: "B", B: "L", L: "F" };
-const LEFT_OF: Record<string, FaceLetter> = { F: "L", L: "B", B: "R", R: "F" };
-
 const U_TIMES = (n: number): string[] => {
   const k = ((n % 4) + 4) % 4;
   return k === 0 ? [] : k === 1 ? ["U"] : k === 2 ? ["U2"] : ["U'"];
@@ -445,18 +441,6 @@ const drive = (
     it++;
   }
   return out;
-};
-
-// 특정 색쌍의 엣지가 현재 어느 EdgeDef 위치에 있는지.
-const findEdge = (c: string, a: string, b: string): { def: EdgeDef; aAt: number } | null => {
-  for (const e of EDGES) {
-    const c0 = c[e.idx[0]];
-    const c1 = c[e.idx[1]];
-    if ((c0 === a && c1 === b) || (c0 === b && c1 === a)) {
-      return { def: e, aAt: c0 === a ? e.idx[0] : e.idx[1] };
-    }
-  }
-  return null;
 };
 
 const findCorner = (c: string, cols: string[]): { def: CornerDef } | null => {

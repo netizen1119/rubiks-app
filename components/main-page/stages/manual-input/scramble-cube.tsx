@@ -204,7 +204,6 @@ const ScrambleCube = () => {
 
     const cubes = state.objects.current.cubes;
     const outlined = state.outlinedSelection;
-    const scene = state.objects.current.scene;
 
     // 큐비 그룹의 첫 자식(box mesh)을 raycaster 대상으로 모은다.
     const targets: THREE.Mesh[] = cubes

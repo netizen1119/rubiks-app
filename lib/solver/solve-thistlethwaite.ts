@@ -1,5 +1,4 @@
 import { Vector3 } from "three";
-import { fcube_to_ifcube } from "./fcube-to-ifcube.ts";
 
 type Predicate = (pos: Vector3) => boolean;
 
@@ -69,24 +68,12 @@ export const solve_thistlethwaite = (cube_to_solve: number[]) => {
         }
       : sticker;
 
-  const get_face = (sticker: Vector3): string => {
-    let { x, y, z } = sticker;
-    return x === 3 ? "R" : x === -3 ? "L" : y === 3 ? "U" : y === -3 ? "D" : z === 3 ? "F" : z === -3 ? "B" : "X";
-  };
-
   const create_gmove = (name: string, axis: Vector3, angle: number, predicate: Predicate): GMove => ({
     name,
     axis,
     angle,
     predicate,
   });
-
-  const create_move_set = (base_name: string, axis: Vector3, pred: Predicate): GMove[] => {
-    let move1: GMove = create_gmove(base_name, axis, 90, pred);
-    let move2: GMove = create_gmove(base_name + "2", axis, 180, pred);
-    let move3: GMove = create_gmove(base_name + "'", axis, 270, pred);
-    return [move1, move2, move3];
-  };
 
   type GCube = Sticker[];
   const solved_gcube = (): GCube => {

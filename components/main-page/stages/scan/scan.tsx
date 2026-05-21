@@ -120,7 +120,7 @@ const ScanCubeStage = () => {
         )}
       </motion.div>
 
-      <canvas id="canvas-scan" className={`hidden ${scanReversed ? "-scale-x-100" : ""}`} />
+      <canvas id="canvas-scan" className="hidden" />
     </div>
   );
 };

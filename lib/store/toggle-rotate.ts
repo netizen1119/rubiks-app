@@ -10,7 +10,6 @@ export const toggleCubeRotating = ({ get }: IStoreFn) => {
     timeline.current.kill();
     timeline.current = null;
 
-    console.log(rubiksGroup.rotation.y);
     gsap.to(rubiksGroup.rotation, {
       y: 0,
       duration: Math.abs(rubiksGroup.rotation.y * 0.16),

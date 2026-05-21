@@ -3,7 +3,7 @@ import { useAppStore } from "./store/store";
 import { solved_cube } from "@/lib/helpers/helper";
 
 const useInitApp = () => {
-  const { toggleCubeRotating, updateCube, updateStore } = useAppStore();
+  const { toggleCubeRotating, updateCube } = useAppStore();
 
   const inited = useRef(false);
   useEffect(() => {

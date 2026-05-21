@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useEffect } from "react";
-import CubeThree, { THREE_HEIGHT, THREE_WIDTH } from "./cube-three";
+import React from "react";
+import CubeThree from "./cube-three";
 import { Variants, motion } from "framer-motion";
 import { useAppStore } from "@/lib/store/store";
-import { clear } from "console";
 
 const CubeVisualization = () => {
   const { currentAppStage, cubeTop, cubeScale, cubeLeft } = useAppStore();

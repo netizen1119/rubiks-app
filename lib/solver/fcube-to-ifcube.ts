@@ -55,32 +55,6 @@ enum Fc {
   B9 = 53,
 }
 
-enum Corner {
-  URF = 0,
-  UFL = 1,
-  ULB = 2,
-  UBR = 3,
-  DFR = 4,
-  DLF = 5,
-  DBL = 6,
-  DRB = 7,
-}
-
-enum Edge {
-  UR = 0,
-  UF = 1,
-  UL = 2,
-  UB = 3,
-  DR = 4,
-  DF = 5,
-  DL = 6,
-  DB = 7,
-  FR = 8,
-  FL = 9,
-  BL = 10,
-  BR = 11,
-}
-
 const cornerFacelet: number[][] = [
   [Fc.U9, Fc.R1, Fc.F3],
   [Fc.U7, Fc.F1, Fc.L3],

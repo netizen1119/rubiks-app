@@ -8,7 +8,6 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass.js";
-import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { useAppStore } from "@/lib/store/store";
 import { cameraPositions } from "@/lib/maps/camera-positions";
@@ -58,13 +57,6 @@ function CubeThree() {
     camera.lookAt(scene.position);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-
-    // Log camera position on c key down
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "c") {
-        console.log({ pos: camera.position, rot: camera.rotation });
-      }
-    });
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     // HiDPI/레티나 대응: 디바이스 픽셀 비율을 반영해 더 선명하게 렌더(최대 2배로 캡 — 성능 보호).

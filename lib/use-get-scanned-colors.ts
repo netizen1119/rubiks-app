@@ -27,10 +27,7 @@ export const useGetScannedColors = ({ canvas, video }: IProps) => {
     // x - 1920
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      console.log("no ctx");
-      return [];
-    }
+    if (!ctx) return [];
     ctx.drawImage(video, 0, 0);
     ctx.fillStyle = "#1c75d0A2";
 
