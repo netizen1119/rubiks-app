@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { CubePosAnchor } from "@/components/cube-visualization/cube-pos-anchor";
 import { THREE_HEIGHT, THREE_WIDTH } from "@/components/cube-visualization/cube-three";
+import OrientationLabels from "@/components/cube-visualization/orientation-labels";
 import { applyMove } from "@/lib/solver/lbl-solver";
 import { ICubeMoves } from "@/lib/moves/moves";
 import { useAppStore } from "@/lib/store/store";
@@ -71,7 +72,7 @@ const detectHitFace = (
 };
 
 const ScrambleCube = () => {
-  const { updateStore, updateCube, rotateCube } = useAppStore();
+  const { updateStore, updateCube, rotateCube, cubeScale } = useAppStore();
   const { toast } = useToast();
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
   // 호버 시 슬라이스의 두 방향 무브(pos/neg) 표시. 드래그 전에 어떤 무브가
@@ -123,6 +124,17 @@ const ScrambleCube = () => {
     updateCube(solved_cube, true);
   };
 
+  // 뷰포트 크기에 맞춰 큐브 스케일 자동 조절 (작은 화면 축소, resize 대응) — solve 와 동일.
+  useEffect(() => {
+    const apply = () => {
+      const s = Math.min(window.innerWidth / 520, window.innerHeight / 720, 1);
+      updateStore({ cubeScale: Math.max(0.5, s) });
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    return () => window.removeEventListener("resize", apply);
+  }, [updateStore]);
+
   useEffect(() => {
     // inited 가드는 두지 않는다. React StrictMode dev 에서 effect 가 두 번 실행되는데
     // 가드를 두면 (setup → cleanup → 스킵된 setup) 패턴이 되어 핸들러가 제거된 상태로
@@ -130,9 +142,6 @@ const ScrambleCube = () => {
 
     // 1~3) 큐비 초기화 + 색상 reset
     resetCubeToInitial();
-
-    // 풀 사이즈로 표시.
-    updateStore({ cubeScale: 1 });
 
     const state = useAppStore.getState();
 
@@ -434,15 +443,16 @@ const ScrambleCube = () => {
       style={{ animation: "fade-in 0.4s ease-out" }}
     >
       <TutorialOverlay />
+      <OrientationLabels />
       <h1 className="text-lg font-semibold text-foreground">큐브를 스크램블하세요</h1>
       <p className="text-xs text-muted-foreground -mt-3 text-center max-w-[22rem]">
         조각 면 위에 커서를 올리면 회전할 층이 강조됩니다. 그 방향으로 드래그해 회전.
       </p>
       {/* 캔버스에 pointer-events: auto 가 적용되어 있어 wrapper 보다 캔버스가 크면 */}
-      {/* 캔버스가 위/아래 버튼 영역을 덮어 클릭을 가로챈다. 캔버스 전체 크기로 wrapper 지정. */}
+      {/* 캔버스가 위/아래 버튼 영역을 덮어 클릭을 가로챈다. 캔버스 크기(스케일 반영)로 wrapper 지정. */}
       <div
         className="flex items-center justify-center"
-        style={{ width: `${THREE_WIDTH}px`, height: `${THREE_HEIGHT}px` }}
+        style={{ width: `${THREE_WIDTH * cubeScale}px`, height: `${THREE_HEIGHT * cubeScale}px` }}
       >
         <CubePosAnchor />
       </div>

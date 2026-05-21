@@ -12,7 +12,7 @@ import StageProgress from "./stage-progress";
 import MoveGuide from "./move-guide";
 import StageInfo from "./stage-info";
 import SolveStats from "./stats";
-import OrientationLabels from "./orientation-labels";
+import OrientationLabels from "@/components/cube-visualization/orientation-labels";
 import gsap from "gsap";
 
 const SPEED_OPTIONS = [0.5, 1, 1.5, 2, 3] as const;
