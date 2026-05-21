@@ -14,6 +14,15 @@ const MoveGuide = () => {
     cubeSolutionStep >= 0 &&
     cubeSolutionStep < cubeSolution.length;
 
+  // 풀이가 아예 없는 상태(초기화 중 또는 실패 직후)는 "완료"가 아니라 중립 표시.
+  if (cubeSolution.length === 0) {
+    return (
+      <div className="flex h-[4.5rem] items-center justify-center">
+        <p className="text-sm text-muted-foreground">풀이를 준비하는 중…</p>
+      </div>
+    );
+  }
+
   if (!inRange) {
     return (
       <div className="flex h-[4.5rem] items-center justify-center">

@@ -24,6 +24,11 @@ const ScanCubeStage = () => {
   useEffect(() => {
     if (inited.current) return;
     inited.current = true;
+
+    // 스캔을 처음(F면)부터 다시 시작할 수 있도록 면 인덱스를 리셋.
+    // (완료 후 currentScanFace 가 null 로 남아 재진입 시 시퀀스가 멈추던 문제 방지)
+    updateStore({ currentScanFace: -1 });
+
     const videoEl = document.querySelector("video") as HTMLVideoElement;
     const canvasEl = document.querySelector("#canvas-scan") as HTMLCanvasElement;
 

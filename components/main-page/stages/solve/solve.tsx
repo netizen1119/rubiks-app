@@ -60,12 +60,15 @@ const SolveCubeStage = () => {
       initSolveCube();
       updateCameraPos(cameraPositions.F);
     } catch (error) {
+      // 풀 수 없는 입력(주로 스캔 색 오류) → 깨진 solve 화면에 머무르지 않고
+      // 스캔으로 복귀해 재스캔 유도. (매뉴얼 입력은 항상 풀 수 있어 이 경로에 안 옴)
       toast({
         variant: "destructive",
-        description: "Failed to generate cube solution - cube scan may be incorrect",
-        title: "Error",
-        duration: Infinity,
+        title: "스캔을 다시 해주세요",
+        description: "스캔된 색 배치로는 큐브를 풀 수 없어요. 면 색을 확인하고 다시 스캔해주세요.",
+        duration: 6000,
       });
+      updateStore({ currentAppStage: "scan" });
     }
   }, []);
 
