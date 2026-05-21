@@ -66,7 +66,6 @@ const ScanCard = () => {
               currentScanFace === null && "opacity-0"
             )}
           >
-            {isConfirmingColors ? "Confirm" : "Show"}{" "}
             <span
               className="text-lg"
               style={{
@@ -78,13 +77,13 @@ const ScanCard = () => {
             >
               {currentScanFace !== null && currentScanFace !== -1
                 ? cubeSidesFull[cube_sides_scan[currentScanFace]]
-                : cubeSidesFull.F}{" "}
-            </span>{" "}
-            face
+                : cubeSidesFull.F}
+            </span>
+            {isConfirmingColors ? " 색을 확인하세요" : "을 보여주세요"}
           </CardTitle>
           {!isConfirmingColors && currentScanFace !== null && currentScanFace !== -1 && (
             <CardDescription className="!mt-0 absolute top-full">
-              Center color -{" "}
+              센터 색 -{" "}
               <span
                 style={{
                   color: `#${colorMapThree[cube_sides_scan[currentScanFace]].getHexString()}`,
@@ -117,11 +116,11 @@ const ScanCard = () => {
             className={cn("w-full transition", currentScanFace !== null && "opacity-0 pointer-events-none")}
             onClick={onSolveClick}
           >
-            Solve
+            풀기
           </Button>
           {currentScanFace !== null && (
             <Button disabled={disabledScanConfirmBtn()} onClick={mainCardBtnClick}>
-              {isConfirmingColors ? "Confirm" : "Scan"}
+              {isConfirmingColors ? "확인" : "스캔"}
             </Button>
           )}
         </CardFooter>

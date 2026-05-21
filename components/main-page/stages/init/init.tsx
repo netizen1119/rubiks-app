@@ -35,8 +35,8 @@ const InitStage = () => {
   };
 
   const getMainBtnText = () => {
-    if (seconds > 0) return `Scan (${seconds})`;
-    return "Scan";
+    if (seconds > 0) return `스캔 (${seconds})`;
+    return "스캔";
   };
 
   return (
@@ -106,7 +106,7 @@ const InitStage = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 1.7 } }}
               >
-                Manual Input
+                직접 입력
               </motion.button>
             </Button>
             <Button asChild variant="ghost">

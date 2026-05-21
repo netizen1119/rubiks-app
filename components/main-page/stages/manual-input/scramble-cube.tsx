@@ -470,7 +470,7 @@ const ScrambleCube = () => {
 
       <div className="flex items-center gap-3">
         <Button variant="secondary" onClick={onReset}>
-          Reset
+          초기화
         </Button>
         <Button onClick={onSolve}>이 상태로 풀기 →</Button>
         <Button variant="ghost" onClick={() => updateStore({ currentAppStage: "deviceselect" })}>

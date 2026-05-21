@@ -32,8 +32,8 @@ export function DeviceSelect() {
       } catch (err) {
         toast({
           variant: "destructive",
-          title: "Camera Permission Denied",
-          description: "Please allow camera access to use this app.",
+          title: "카메라 권한이 거부됨",
+          description: "이 앱을 사용하려면 카메라 접근을 허용해주세요.",
         });
       }
     };
@@ -44,11 +44,11 @@ export function DeviceSelect() {
   return (
     <Select value={deviceId} onValueChange={(id) => updateStore({ deviceId: id })}>
       <SelectTrigger className="w-[200px]">
-        <SelectValue placeholder="Select a camera device" />
+        <SelectValue placeholder="카메라를 선택하세요" />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          <SelectLabel>Select a camera device</SelectLabel>
+          <SelectLabel>카메라 선택</SelectLabel>
           {devices.map((device) => (
             <SelectItem key={`device-sel-${device.id}`} value={device.id}>
               {device.label}

@@ -223,6 +223,14 @@ const SolveCubeStage = () => {
     >
       <OrientationLabels />
 
+      {/* 나가기 — solve 종료 후 입력 시작점(deviceselect)으로. 스캔 화면 뒤로가기와 동일 스타일. */}
+      <button
+        onClick={() => updateStore({ currentAppStage: "deviceselect" })}
+        className="fixed top-4 left-4 z-50 rounded-md bg-black/40 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-black/60 backdrop-blur-sm transition-colors"
+      >
+        ← 나가기
+      </button>
+
       {/* 모드 전환 토글 — 클릭 시 현재 위치에서 해당 모드로 이어 풀기. */}
       <div className="flex items-center gap-2 text-xs">
         <div className="flex rounded-full border border-border overflow-hidden">
