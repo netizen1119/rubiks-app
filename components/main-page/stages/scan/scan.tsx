@@ -3,6 +3,8 @@
 import { useScanRefresh } from "@/lib/use-scan-refresh";
 import React, { useEffect, useRef, useState } from "react";
 import { useGetScannedColors } from "../../../../lib/use-get-scanned-colors";
+import { resetColorCalibration } from "@/lib/helpers/classify-scan-color";
+import DevScanResultPreview from "@/components/devtools/scan-result-preview";
 import { useAppStore } from "@/lib/store/store";
 import { motion } from "framer-motion";
 import ScanCard from "./card";
@@ -27,7 +29,9 @@ const ScanCubeStage = () => {
 
     // 스캔을 처음(F면)부터 다시 시작할 수 있도록 면 인덱스를 리셋.
     // (완료 후 currentScanFace 가 null 로 남아 재진입 시 시퀀스가 멈추던 문제 방지)
-    updateStore({ currentScanFace: -1 });
+    updateStore({ currentScanFace: -1, scannedFaces: {} });
+    // 색 캘리브레이션도 초기화 — 직전 세션 조명 보정값이 새 스캔에 새지 않도록.
+    resetColorCalibration();
 
     const videoEl = document.querySelector("video") as HTMLVideoElement;
     const canvasEl = document.querySelector("#canvas-scan") as HTMLCanvasElement;
@@ -126,6 +130,8 @@ const ScanCubeStage = () => {
       </motion.div>
 
       <canvas id="canvas-scan" className="hidden" />
+
+      {process.env.NEXT_PUBLIC_DEV_MODE === "true" && streamStared && <DevScanResultPreview />}
     </div>
   );
 };

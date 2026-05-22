@@ -2,55 +2,46 @@
 
 import { useAppStore } from "@/lib/store/store";
 import { Button } from "@/components/ui/button";
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { colorMapThree } from "@/lib/maps/cube";
-import { cubeSidesFull, cubeSidesNamedColors, cube_sides_scan } from "@/lib/maps/cube";
-import ScanColorPanel from "./color-panel";
-import { AnimatePresence } from "framer-motion";
+import { cubeSidesNamedColors, cube_sides_scan } from "@/lib/maps/cube";
 import { cn } from "@/lib/utils";
 import { CubePosAnchor } from "@/components/cube-visualization/cube-pos-anchor";
+import { autoOrientCube } from "@/lib/solver/auto-orient";
+import { useToast } from "@/components/ui/use-toast";
 
 const ScanCard = () => {
-  const [isConfirmingColors, setIsConfirmingColors] = useState(false);
+  const { scanSize, updateStore, updateCube, currentScanFace, lastScanResult } = useAppStore();
+  const { toast } = useToast();
 
-  const { scanSize, updateCubeScan, updateStore, currentScanFace, lastScanResult } = useAppStore();
+  const scanning = currentScanFace !== null && currentScanFace !== -1;
+  const expectedSide = scanning ? cube_sides_scan[currentScanFace] : null;
 
-  const mainCardBtnClick = () => {
-    if (isConfirmingColors) {
-      setIsConfirmingColors(false);
-      updateCubeScan(lastScanResult);
-
-      if (currentScanFace !== cube_sides_scan.length - 1) {
-        updateStore({ isScanRefreshing: true });
-      }
-      return;
-    }
-
-    updateStore({ isScanRefreshing: false });
-    setIsConfirmingColors(true);
-  };
+  // 현재 카메라에 든 면의 센터(인덱스 4) 인식 결과.
+  const centerSide = lastScanResult?.[4]?.destSide;
+  const centerKnown = !!centerSide && centerSide !== "X";
+  const centerMatches = !!expectedSide && centerSide === expectedSide;
+  // 인식은 됐는데 기대한 면이 아님 → 명확히 안내.
+  const wrongFace = scanning && centerKnown && !centerMatches;
 
   const onSolveClick = () => {
-    // solve 로 넘어가며 스캔 카메라 스트림 정지.
+    // 캡처된 6면을 회전 자동 보정 → 풀 수 있는 표준 배치 산출.
+    const faces = useAppStore.getState().scannedFaces;
+    const oriented = autoOrientCube(faces);
+    if (!oriented) {
+      toast({
+        variant: "destructive",
+        title: "큐브를 풀 수 없어요",
+        description: "한 면 이상 색이 잘못 인식된 것 같아요. 그 면을 다시 비춰 스캔해주세요.",
+      });
+      return;
+    }
+    // 풀 수 있는 배치를 메인 큐브에 반영하고 solve 로.
+    updateCube(oriented, true);
     const stream = useAppStore.getState().scanStream;
     stream?.getTracks().forEach((t) => t.stop());
     updateStore({ currentAppStage: "solve", scanStream: null });
-  };
-
-  const disabledScanConfirmBtn = () => {
-    if (currentScanFace === -1) return true;
-    if (isConfirmingColors) {
-      if (lastScanResult.some((r) => r.destSide === "X")) return true;
-      // Check if middle color is of the correct side
-      if (
-        currentScanFace !== null &&
-        currentScanFace !== -1 &&
-        lastScanResult.length === 9 &&
-        lastScanResult[4].destSide !== cube_sides_scan[currentScanFace]
-      )
-        return true;
-    }
   };
 
   return (
@@ -68,61 +59,43 @@ const ScanCard = () => {
           >
             <span
               className="text-lg"
-              style={{
-                color:
-                  currentScanFace !== null && currentScanFace !== -1
-                    ? `#${colorMapThree[cube_sides_scan[currentScanFace]].getHexString()}`
-                    : "",
-              }}
+              style={{ color: expectedSide ? `#${colorMapThree[expectedSide].getHexString()}` : "" }}
             >
-              {currentScanFace !== null && currentScanFace !== -1
-                ? cubeSidesFull[cube_sides_scan[currentScanFace]]
-                : cubeSidesFull.F}
-            </span>
-            {isConfirmingColors ? " 색을 확인하세요" : "을 보여주세요"}
+              {expectedSide ? cubeSidesNamedColors[expectedSide] : cubeSidesNamedColors.F}
+            </span>{" "}
+            면을 보여주세요
           </CardTitle>
-          {!isConfirmingColors && currentScanFace !== null && currentScanFace !== -1 && (
+          {scanning && expectedSide && (
             <CardDescription className="!mt-0 absolute top-full">
-              센터 색 -{" "}
-              <span
-                style={{
-                  color: `#${colorMapThree[cube_sides_scan[currentScanFace]].getHexString()}`,
-                }}
-              >
-                {cubeSidesNamedColors[cube_sides_scan[currentScanFace]]}
-              </span>
+              {wrongFace ? (
+                <span className="text-red-400">
+                  지금은{" "}
+                  <span style={{ color: `#${colorMapThree[centerSide].getHexString()}` }}>
+                    {cubeSidesNamedColors[centerSide]}
+                  </span>{" "}
+                  면이에요
+                </span>
+              ) : centerMatches ? (
+                <span className="text-emerald-400">인식됨 · 잠시 그대로 들고 계세요…</span>
+              ) : (
+                <span>방향은 상관없어요 · 사각형 안에 맞춰주세요</span>
+              )}
             </CardDescription>
           )}
         </CardHeader>
         <CardContent className="h-[10.5rem]">
-          {currentScanFace !== null ? (
-            <div className="grid grid-cols-[1fr_1fr] h-full w-full">
-              <div>
-                <AnimatePresence>{isConfirmingColors && <ScanColorPanel key="scan-color-panel" />}</AnimatePresence>
-              </div>
-              <div className="flex w-full justify-center items-center">
-                <CubePosAnchor className="mr-[-3.5rem] mt-[-5rem]" />
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full w-full ">
-              <CubePosAnchor />
-            </div>
-          )}
+          <div className="flex items-center justify-center h-full w-full">
+            <CubePosAnchor />
+          </div>
         </CardContent>
         <CardFooter className="p-4 absolute bottom-0 right-0">
           <Button
             variant="outline"
-            className={cn("w-full transition", currentScanFace !== null && "opacity-0 pointer-events-none")}
+            className={cn("w-full transition", scanning && "opacity-0 pointer-events-none")}
             onClick={onSolveClick}
           >
             풀기
           </Button>
-          {currentScanFace !== null && (
-            <Button disabled={disabledScanConfirmBtn()} onClick={mainCardBtnClick}>
-              {isConfirmingColors ? "확인" : "스캔"}
-            </Button>
-          )}
         </CardFooter>
       </Card>
     </div>

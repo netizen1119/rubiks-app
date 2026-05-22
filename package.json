@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
-    "dev-https": "next dev --turbo --experimental-https",
+    "dev-https": "next dev --turbo --experimental-https --experimental-https-key certificates/localhost-key.pem --experimental-https-cert certificates/localhost.pem",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test --experimental-strip-types lib/solver/lbl-solver.test.ts"
+    "test": "node --test --experimental-strip-types lib/solver/*.test.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.0",
