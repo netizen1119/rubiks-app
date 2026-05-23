@@ -113,7 +113,7 @@
     "allDone": "All done 🎉",
     "moveCounter": "Move {current} of {total}",
     "progress": "Progress",
-    "stage": "This step",
+    "stage": "Step",
     "stageMovesUnit": " moves",
     "time": "Time",
     "showPrinciple": "How this step works",

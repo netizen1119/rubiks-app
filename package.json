@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test --experimental-strip-types lib/solver/*.test.ts"
+    "test": "node --test --experimental-strip-types lib/solver/*.test.ts lib/i18n/*.test.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.0",

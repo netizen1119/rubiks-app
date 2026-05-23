@@ -90,11 +90,22 @@ v7 이후, 카메라 스캔 흐름의 실패 처리를 안정화하고 UI를 한
 | 항목 | 결과 |
 |---|---|
 | `tsc --noEmit` | PASS |
-| `npm test` | 35/35 PASS |
+| `npm test` | 38/38 PASS (LBL 35 + i18n 3: 키 일관성·placeholder·빈값 가드) |
 | `next build` (production) | PASS (next-intl SSG `ENVIRONMENT_FALLBACK` 경고는 자동 폴백) |
 | 스캔 카메라 영상/거울/뒤로가기 | PASS (사용자 확인) |
 | 연습 모드 드래그 상호작용 | **미검증 (런타임 테스트 대기)** |
 | 한·영 토글 런타임 (homepage) | PASS (사용자 확인 — "번역 잘 됨, 표현 어색") |
+
+### 번들 크기 베이스라인 (2026-05-23)
+i18n 추가 후 production 빌드 기준. 다음 작업 시 이 값에서 크게 부풀어 오르는지 비교용.
+```
+Route (app)                Size     First Load JS
+/                          87.6 kB        365 kB
+/_not-found                 885 B         85.4 kB
++ shared by all                          84.6 kB
+```
+ko/en messages JSON 두 벌이 모두 client 번들에 포함된 상태. 줄이려면 활성
+언어만 dynamic import 하도록 split (효과 ~수 KB, 우선순위 낮음).
 
 ---
 
