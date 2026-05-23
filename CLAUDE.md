@@ -1,8 +1,9 @@
 # 프로젝트 컨텍스트
 
 ## 현재 상태
-연습 모드 + 스캔 흐름 안정화 + i18n 완료 (2026-05-21). 진행 내역:
-- `HANDOVER_v8.md` — **가장 최신** (스캔→solve 실패 복구, solve 나가기·i18n, 2-4 연습 모드[런타임 테스트 대기])
+i18n·a11y·DRY 통합 완료 (2026-05-23). 진행 내역:
+- `HANDOVER_v8.md` — **가장 최신** (스캔→solve 복구, solve 나가기·i18n, 2-4 연습 모드,
+  한·영 토글, a11y, 매뉴얼 입력 드래그 DRY 통합 — 연습 모드/DRY 런타임 smoke test 대기)
 - `HANDOVER_v7.md` — UX 폴리시/반응형/HiDPI·조명/카메라 스캔 복구·정리
 - `HANDOVER_v6.md` — 3차 (수준 선택 learn/fast → 모드별 솔버 분기, 도중 전환 토글)
 - `HANDOVER_v5.md` — 2차 작업 결과
@@ -11,7 +12,8 @@
 - `CLAUDE_CODE_PLAN.md` — 1차 작업 계획
 
 저장소: private `netizen1119/rubiks-app-private` (origin, SSH). public 포크는 `fork` remote.
-다음: 연습 모드 런타임 테스트 / 큐브 도착 후 카메라 매핑 검증 / 드래그 로직 DRY 통합 (HANDOVER_v8 §5).
+다음: 연습 모드·DRY 통합 런타임 smoke test / 큐브 도착 후 카메라 매핑 검증 /
+영문 번역 다듬기 (HANDOVER_v8 §5).
 
 ## 기술 스택
 Next.js 14, React 18, Three.js, Zustand, TypeScript strict, Tailwind, GSAP
