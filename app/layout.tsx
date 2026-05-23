@@ -4,6 +4,8 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/react";
+import { I18nProvider } from "@/lib/i18n/provider";
+import LanguageToggle from "@/components/main-page/language-toggle";
 
 const fontSans = Inter({
   subsets: ["latin"],
@@ -24,8 +26,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={cn("bg-background font-sans antialiased", fontSans.variable)}>
-        {children}
-        <Toaster />
+        <I18nProvider>
+          <LanguageToggle />
+          {children}
+          <Toaster />
+        </I18nProvider>
         <Analytics />
       </body>
     </html>

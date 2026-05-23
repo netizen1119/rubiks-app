@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/lib/store/store";
 import { CubePosAnchor } from "@/components/cube-visualization/cube-pos-anchor";
 import ScanInstructionsInfo from "./intructions-info";
+import { useTranslations } from "next-intl";
 
 const informationButtonLockDuration = 5000;
 
 const InitStage = () => {
   const { currentAppStage, updateStore, deviceId, toggleCubeRotating, hideCubeStickers } = useAppStore();
   const [seconds, setSeconds] = useState(informationButtonLockDuration / 1000);
+  const t = useTranslations();
 
   // 홈에서 풀이 모드(learn/fast)를 고르고 deviceselect 로 진행.
   const chooseMode = (mode: "learn" | "fast") => {
@@ -35,8 +37,8 @@ const InitStage = () => {
   };
 
   const getMainBtnText = () => {
-    if (seconds > 0) return `스캔 (${seconds})`;
-    return "스캔";
+    if (seconds > 0) return t("deviceSelect.scanCount", { seconds });
+    return t("deviceSelect.scan");
   };
 
   return (
@@ -71,7 +73,7 @@ const InitStage = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 1.6 } }}
               >
-                차근차근 배우기
+                {t("home.modeLearn")}
               </motion.button>
             </Button>
             <Button asChild variant="secondary">
@@ -80,7 +82,7 @@ const InitStage = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 1.7 } }}
               >
-                빠르게 풀이 보기
+                {t("home.modeFast")}
               </motion.button>
             </Button>
           </>
@@ -106,7 +108,7 @@ const InitStage = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 1.7 } }}
               >
-                직접 입력
+                {t("deviceSelect.manualInput")}
               </motion.button>
             </Button>
             <Button asChild variant="ghost">
@@ -115,7 +117,7 @@ const InitStage = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 1.8 } }}
               >
-                ← 뒤로
+                {t("common.back")}
               </motion.button>
             </Button>
           </>

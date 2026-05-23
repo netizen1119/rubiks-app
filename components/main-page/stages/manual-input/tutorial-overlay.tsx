@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 const STORAGE_KEY = "manualInputTutorialSeen.v1";
 
 // 매뉴얼 입력 첫 진입 시 1회용 안내 오버레이. localStorage 로 표시 여부 추적.
 const TutorialOverlay = () => {
   const [show, setShow] = useState(false);
+  const t = useTranslations();
 
   useEffect(() => {
     try {
@@ -46,30 +48,28 @@ const TutorialOverlay = () => {
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-base font-semibold mb-3">매뉴얼 입력 사용법</h2>
+        <h2 className="text-base font-semibold mb-3">{t("tutorial.title")}</h2>
         <ul className="space-y-2 text-muted-foreground">
           <li>
-            <span className="text-foreground font-medium">조각 면 드래그</span> ·
-            해당 층을 회전. 면 위에 마우스를 올리면 회전할 층이 강조됩니다.
+            <span className="text-foreground font-medium">{t("tutorial.dragFaceTitle")}</span> ·{" "}
+            {t("tutorial.dragFaceBody")}
           </li>
           <li>
-            <span className="text-foreground font-medium">빈 공간 드래그</span> ·
-            큐브 시점(각도) 회전. 뒷면을 보고 싶을 때 사용.
+            <span className="text-foreground font-medium">{t("tutorial.dragEmptyTitle")}</span> ·{" "}
+            {t("tutorial.dragEmptyBody")}
           </li>
           <li>
-            <span className="text-foreground font-medium">호버 위치</span> ·
-            큐비의 윗/아랫/좌/우 가장자리 근처로 커서 → 다른 층이 강조됩니다.
-            한 큐비에서 가로줄/세로줄 모두 선택 가능.
+            <span className="text-foreground font-medium">{t("tutorial.hoverTitle")}</span> ·{" "}
+            {t("tutorial.hoverBody")}
           </li>
           <li>
-            <span className="text-foreground font-medium">Reset</span> · 큐브를
-            솔브드 상태로 복원. <span className="text-foreground font-medium">이 상태로 풀기</span>{" "}
-            → 단계별 풀이 안내 시작.
+            <span className="text-foreground font-medium">{t("tutorial.resetTitle")}</span> · {t("tutorial.resetBody")}{" "}
+            <span className="text-foreground font-medium">{t("tutorial.solveTitle")}</span> {t("tutorial.solveBody")}
           </li>
         </ul>
         <div className="flex justify-end mt-4">
           <Button onClick={close} size="sm">
-            시작하기
+            {t("common.start")}
           </Button>
         </div>
       </div>

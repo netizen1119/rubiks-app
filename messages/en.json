@@ -1,0 +1,273 @@
+{
+  "common": {
+    "back": "← Back",
+    "exit": "← Exit",
+    "reset": "Reset",
+    "copy": "📋 Copy",
+    "copied": "Copied",
+    "start": "Get started",
+    "completed": "Done",
+    "next": "Next move →",
+    "prev": "← Previous",
+    "loading": "Preparing solution…",
+    "language": "Language"
+  },
+  "home": {
+    "headingLine1": "Scan.",
+    "headingLine2": "Solve.",
+    "headingLine3": "Be proud.",
+    "subText": "Scan your cube with a smartphone and get a step-by-step solution.",
+    "modeLearn": "Learn step by step",
+    "modeFast": "Show me the fastest solve"
+  },
+  "deviceSelect": {
+    "scanCount": "Scan ({seconds})",
+    "scan": "Scan",
+    "manualInput": "Enter manually",
+    "selectCamera": "Pick a camera",
+    "cameraLabel": "Camera",
+    "permissionDeniedTitle": "Camera permission denied",
+    "permissionDeniedDesc": "Allow camera access to use this app.",
+    "instructionsHeading": "Get ready to scan",
+    "instr1Before": "Hold the cube so the ",
+    "instr1Red": "red center faces you",
+    "instr1After": ".",
+    "instr2Heading": "Orient the other faces:",
+    "instr2LeftLabel": "Left",
+    "instr2LeftBefore": " — ",
+    "instr2LeftColor": "blue center",
+    "instr2LeftAfter": " on the left.",
+    "instr2RightLabel": "Right",
+    "instr2RightBefore": " — ",
+    "instr2RightColor": "green center",
+    "instr2RightAfter": " on the right.",
+    "instr2TopLabel": "Top",
+    "instr2TopBefore": " — ",
+    "instr2TopColor": "yellow center",
+    "instr2TopAfter": " on top.",
+    "instr2BottomLabel": "Bottom",
+    "instr2BottomBefore": " — ",
+    "instr2BottomColor": "white center",
+    "instr2BottomAfter": " on the bottom.",
+    "instr3": "Use the 3D preview to match your cube's orientation."
+  },
+  "scan": {
+    "showFace": "Show the {color} face",
+    "showFacePrefix": "Show the ",
+    "showFaceSuffix": " face",
+    "wrongFacePrefix": "That's the ",
+    "wrongFaceSuffix": " face",
+    "recognized": "Got it · Hold still…",
+    "anyOrientation": "Any orientation works · Just fit it in the square",
+    "solveButton": "Solve",
+    "cameraOpenErrorTitle": "Can't open the camera",
+    "cameraOpenErrorDesc": "Check camera permission and make sure no other app is using it.",
+    "scanFailToastTitle": "This cube can't be solved",
+    "scanFailToastDesc": "One or more faces look misread. Please rescan the affected face."
+  },
+  "manualInput": {
+    "heading": "Scramble your cube",
+    "hint": "Hover a sticker to highlight a layer, then drag in the direction you want it to rotate.",
+    "solve": "Solve from here →",
+    "alreadySolvedTitle": "Already solved",
+    "alreadySolvedDesc": "Scramble the cube first.",
+    "movesLabel": "Moves ({count})",
+    "copyToastDesc": "Copied {count} moves to clipboard.",
+    "dragDirection": "Drag direction:",
+    "or": " or "
+  },
+  "tutorial": {
+    "title": "How manual input works",
+    "dragFaceTitle": "Drag a sticker",
+    "dragFaceBody": "Rotates that layer. Hover first to see which layer will turn.",
+    "dragEmptyTitle": "Drag empty space",
+    "dragEmptyBody": "Orbits the camera. Use it to see the back faces.",
+    "hoverTitle": "Hover position",
+    "hoverBody": "Move the cursor toward a cubie's top, bottom, left, or right edge to highlight a different layer. Both row and column are reachable from one cubie.",
+    "resetTitle": "Reset",
+    "resetBody": "Restores the cube to the solved state.",
+    "solveTitle": "Solve from here",
+    "solveBody": "Starts the step-by-step guide."
+  },
+  "solve": {
+    "modeLearnLabel": "📚 Learn",
+    "modeFastLabel": "⚡ Fast",
+    "movesCount": "{count} moves",
+    "practiceOn": "👁 Show solution",
+    "practiceOff": "✋ I'll solve",
+    "errorTitle": "Error",
+    "switchModeError": "Couldn't generate a solution while switching modes.",
+    "scanRescanTitle": "Please rescan your cube",
+    "scanRescanDesc": "This color layout can't be solved. Double-check the face colors and rescan.",
+    "doubleHint": "A 180° turn means two quarter-turns in the same direction. Try again.",
+    "wrongFace": "Wrong face. Try again, or press 💡 Hint.",
+    "wrongDir": "Opposite direction. Try again.",
+    "completedCelebrate": "Solved 🎉",
+    "practiceDoMove": "Try this move ({current} / {total})",
+    "practicePrompt": "✋ Make the next move yourself",
+    "practiceHintHint": "{current} / {total} · Stuck? Press 💡 Hint",
+    "hintButton": "💡 Hint",
+    "play": "▶ Auto-play",
+    "pause": "⏸ Pause",
+    "speedLabel": "Speed",
+    "allDone": "All done 🎉",
+    "moveCounter": "Move {current} of {total}",
+    "progress": "Progress",
+    "stage": "This step",
+    "stageMovesUnit": " moves",
+    "time": "Time",
+    "showPrinciple": "How this step works",
+    "goal": "Goal · ",
+    "approach": "Approach · ",
+    "algo": "Algorithm · ",
+    "tip": "Tip · "
+  },
+  "move": {
+    "describe": "{face} {direction}",
+    "describeDouble": "{face} 180°",
+    "face": {
+      "R": "Right face",
+      "L": "Left face",
+      "U": "Up face",
+      "D": "Down face",
+      "F": "Front face",
+      "B": "Back face",
+      "M": "Middle vertical slice",
+      "E": "Middle horizontal slice",
+      "S": "Middle front slice"
+    },
+    "dir": {
+      "cw": "clockwise",
+      "ccw": "counter-clockwise",
+      "double": "180°",
+      "M_cw": "toward Left",
+      "M_ccw": "toward Right",
+      "E_cw": "toward Bottom",
+      "E_ccw": "toward Top",
+      "S_cw": "toward Front",
+      "S_ccw": "toward Back"
+    }
+  },
+  "cube": {
+    "sideFull": {
+      "U": "Up",
+      "R": "Right",
+      "F": "Front",
+      "D": "Down",
+      "L": "Left",
+      "B": "Back"
+    },
+    "color": {
+      "U": "yellow",
+      "R": "green",
+      "F": "red",
+      "D": "white",
+      "L": "blue",
+      "B": "orange"
+    }
+  },
+  "orientation": {
+    "U": "U Top",
+    "D": "D Bot",
+    "R": "R Right",
+    "L": "L Left",
+    "F": "F Front",
+    "B": "B Back"
+  },
+  "stages": {
+    "lbl": {
+      "1": "Step 1 — White Cross",
+      "2": "Step 2 — Align the Cross",
+      "3": "Step 3 — First Layer Corners",
+      "4": "Step 4 — Middle Layer Edges",
+      "5": "Step 5 — Yellow Cross (OLL Edges)",
+      "6": "Step 6 — Yellow Face (OLL Corners)",
+      "7": "Step 7 — Position Last Layer Corners",
+      "8": "Step 8 — Position Last Layer Edges"
+    },
+    "fast": {
+      "1": "Step 1 — Edge Orientation (→ G1)",
+      "2": "Step 2 — Domino Reduction (→ G2)",
+      "3": "Step 3 — Permutation Setup (→ G3)",
+      "4": "Step 4 — Solve with Half-Turns (→ G4)"
+    },
+    "lblDesc": {
+      "0": {
+        "shortTitle": "Step 1 — White Cross",
+        "goal": "Place the 4 white edges on the bottom (D) face so each side sticker matches its adjacent center.",
+        "approach": "Bring each white edge up to the U face, line it up above its target slot, and drop it down with F2 / R2 / B2 / L2.",
+        "tip": "Each center color tells you that face's target color. Pair white with the neighboring center to choose the right slot."
+      },
+      "1": {
+        "shortTitle": "Step 2 — Align the Cross",
+        "goal": "Line up the side colors of the bottom cross with their centers. (Merged with Step 1 in this solver.)",
+        "approach": "This solver handles alignment during Step 1, so this step usually has 0 moves."
+      },
+      "2": {
+        "shortTitle": "Step 3 — First Layer Corners",
+        "goal": "Insert all 4 white corners into the bottom layer with the correct position and orientation.",
+        "approach": "Bring the corner up to the U face, line it up above its slot, then repeat R U R' U' (right slot) or L' U' L U (left slot).",
+        "representativeAlgo": "R U R' U'",
+        "tip": "The direction the white sticker is facing tells you how many trigger repeats you need (usually 1–5)."
+      },
+      "3": {
+        "shortTitle": "Step 4 — Middle Layer Edges",
+        "goal": "Insert the 4 middle-layer edges. Edges containing yellow are saved for later.",
+        "approach": "Find an edge on U with no yellow, line up its side color with the matching center, then run the right-hand or left-hand insert.",
+        "representativeAlgo": "Right: U R U' R' U' F' U F\nLeft:  U' L' U L U F U' F'"
+      },
+      "4": {
+        "shortTitle": "Step 5 — Yellow Cross (OLL Edges)",
+        "goal": "Make the 4 U-face edge stickers yellow (positions U[1, 3, 5, 7]).",
+        "approach": "Pattern flow: Dot → L → Line → Cross. Apply F R U R' U' F' once per pattern.",
+        "representativeAlgo": "F R U R' U' F'",
+        "tip": "Dot: any orientation works. L-shape: keep the L in the top-left. Line: hold it horizontally."
+      },
+      "5": {
+        "shortTitle": "Step 6 — Yellow Face (OLL Corners)",
+        "goal": "Make every U-face sticker yellow (corners included).",
+        "approach": "Repeat Sune (R U R' U R U2 R'). Apply 1–3 times depending on the case.",
+        "representativeAlgo": "R U R' U R U2 R'  (Sune)",
+        "tip": "0 yellow corners: Sune from any orientation. 1 oriented corner: put it back-right and Sune. 2 corners: adjust by pattern first."
+      },
+      "6": {
+        "shortTitle": "Step 7 — Position Last Layer Corners",
+        "goal": "Swap U-face corners so each one's side stickers match the surrounding centers.",
+        "approach": "Keep one already-correct corner in place and cycle the other three with a PLL corner-swap algorithm.",
+        "tip": "0 correct corners: run the cycle once from any angle to create one. Then keep the correct corner at back-right."
+      },
+      "7": {
+        "shortTitle": "Step 8 — Position Last Layer Edges",
+        "goal": "Swap U-face edges so each one's side stickers match the surrounding centers. Cube solved.",
+        "approach": "U-perm (3-edge cycle). Pick the clockwise or counter-clockwise variant based on the cycle direction.",
+        "representativeAlgo": "CW:  R2 U R U R' U' R' U' R' U R'\nCCW: R U' R U R U R U' R' U' R2",
+        "tip": "Place the already-correct edge above the F face and apply. If none match, run it once from any angle to create one."
+      }
+    },
+    "fastDesc": {
+      "0": {
+        "shortTitle": "Step 1 — Edge Orientation",
+        "goal": "Orient every edge so the rest of the solve never needs an F or B quarter-turn (enter group G1).",
+        "approach": "A full HTM search orients all 12 edges in a single pass.",
+        "tip": "From here on, F and B can only be used as half-turns (F2 / B2)."
+      },
+      "1": {
+        "shortTitle": "Step 2 — Domino Reduction",
+        "goal": "Orient the corners (CO) and place the E-slice edges to reach the domino state (G2).",
+        "approach": "Restricted search (U and D free, plus L, R, F2, B2) fixes corner orientation and E-slice edges.",
+        "tip": "In the domino state the whole cube can be finished using only the top and bottom layers."
+      },
+      "2": {
+        "shortTitle": "Step 3 — Permutation Setup",
+        "goal": "Arrange the pieces into a group (G3) reachable using only half-turns.",
+        "approach": "Restricted search (U and D free, plus F2, B2, L2, R2) places corners and edges into the even-permutation group."
+      },
+      "3": {
+        "shortTitle": "Step 4 — Solve with Half-Turns",
+        "goal": "Finish the cube using only half-turns (G4 = solved).",
+        "approach": "Use only U2, D2, L2, R2, F2, B2 to complete the permutation.",
+        "tip": "Because this stage only uses 180° turns, the finish looks especially clean."
+      }
+    }
+  }
+}

@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useAppStore } from "@/lib/store/store";
 import { THREE_WIDTH, THREE_HEIGHT } from "@/components/cube-visualization/cube-three";
+import { useTranslations } from "next-intl";
 
 // 라이브 방향 나침반.
 // 각 면 중심의 월드 위치를 매 프레임 화면으로 투영해 라벨을 붙인다. 시점을 돌리면
@@ -13,20 +14,23 @@ import { THREE_WIDTH, THREE_HEIGHT } from "@/components/cube-visualization/cube-
 // 좌표계: U=+y, D=-y, R=+x, L=-x, F=+z(기본 시점이 바라보는 면), B=-z.
 // 큐브 반경 ~1.5 바깥(R)로 띄워 면 위에 겹치지 않게 한다.
 const R = 2.35;
-const FACES = [
-  { key: "U", label: "U 위", pos: new THREE.Vector3(0, R, 0) },
-  { key: "D", label: "D 아래", pos: new THREE.Vector3(0, -R, 0) },
-  { key: "R", label: "R 오른", pos: new THREE.Vector3(R, 0, 0) },
-  { key: "L", label: "L 왼", pos: new THREE.Vector3(-R, 0, 0) },
-  { key: "F", label: "F 정면", pos: new THREE.Vector3(0, 0, R) },
-  { key: "B", label: "B 뒤", pos: new THREE.Vector3(0, 0, -R) },
-];
+const FACE_KEYS = ["U", "D", "R", "L", "F", "B"] as const;
+const FACE_POS: Record<(typeof FACE_KEYS)[number], THREE.Vector3> = {
+  U: new THREE.Vector3(0, R, 0),
+  D: new THREE.Vector3(0, -R, 0),
+  R: new THREE.Vector3(R, 0, 0),
+  L: new THREE.Vector3(-R, 0, 0),
+  F: new THREE.Vector3(0, 0, R),
+  B: new THREE.Vector3(0, 0, -R),
+};
 
 const OrientationLabels = () => {
   const cubeLeft = useAppStore((s) => s.cubeLeft);
   const cubeTop = useAppStore((s) => s.cubeTop);
   const cubeScale = useAppStore((s) => s.cubeScale);
   const refs = useRef<(HTMLSpanElement | null)[]>([]);
+  const t = useTranslations("orientation");
+  const FACES = FACE_KEYS.map((key) => ({ key, label: t(key), pos: FACE_POS[key] }));
 
   useEffect(() => {
     let raf = 0;

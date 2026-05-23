@@ -16,8 +16,6 @@ import { Vector3 } from "three";
 
 export type LBLStage = {
   stageIndex: number;
-  stageName: string;
-  stageNameEn: string;
   moves: string[];
 };
 
@@ -660,20 +658,20 @@ export const solveLBL = (cube: string): LBLStage[] => {
   try {
     let state = cube;
     const stages: LBLStage[] = [];
-    const run = (fn: (s: string) => string[], idx: number, name: string, nameEn: string) => {
+    const run = (fn: (s: string) => string[], idx: number) => {
       const moves = fn(state);
-      stages.push({ stageIndex: idx, stageName: name, stageNameEn: nameEn, moves });
+      stages.push({ stageIndex: idx, moves });
       state = applyMoves(state, moves);
     };
 
-    run(solveCross, 1, "1단계: 십자를 맞춘다", "White Cross");
-    run(() => [], 2, "2단계: 십자 모서리를 정렬한다", "Align Cross");
-    run(solveFirstLayerCorners, 3, "3단계: 1층 코너를 맞춘다", "First Layer");
-    run(solveSecondLayer, 4, "4단계: 2층을 맞춘다", "Second Layer");
-    run(solveYellowCross, 5, "5단계: 윗면 십자를 맞춘다", "Yellow Cross");
-    run(solveYellowFace, 6, "6단계: 윗면을 맞춘다", "Yellow Face");
-    run(solveCornerPerm, 7, "7단계: 3층 코너를 맞춘다", "Corner Perm");
-    run(solveEdgePerm, 8, "8단계: 3층 엣지를 맞춘다", "Edge Perm");
+    run(solveCross, 1);
+    run(() => [], 2);
+    run(solveFirstLayerCorners, 3);
+    run(solveSecondLayer, 4);
+    run(solveYellowCross, 5);
+    run(solveYellowFace, 6);
+    run(solveCornerPerm, 7);
+    run(solveEdgePerm, 8);
 
     return stages;
   } finally {

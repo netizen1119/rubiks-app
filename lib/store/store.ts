@@ -51,7 +51,11 @@ const getOrbitControlsDefault = () => {
 const appStages = ["homepage", "deviceselect", "scan", "manual-input", "solve"] as const;
 export type IAppStages = (typeof appStages)[number];
 
+export type Language = "ko" | "en";
+
 const defaultStore = {
+  // 화면 표시 언어. 초기값은 ko (provider 가 마운트 시 navigator/localStorage 로 갱신).
+  language: "ko" as Language,
   scanSize: 170,
   isScanRefreshing: false,
   isScanRefreshGlow: false,

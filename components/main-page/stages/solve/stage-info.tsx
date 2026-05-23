@@ -2,15 +2,17 @@
 
 import { useState } from "react";
 import { useAppStore } from "@/lib/store/store";
-import { getStageDescription } from "@/lib/maps/stage-descriptions";
 import { cn } from "@/lib/utils";
+import { useTranslations, useMessages } from "next-intl";
 
-// 현재 단계의 풀이 원리/대표 알고리즘을 접을 수 있는 카드로 표시.
 const StageInfo = () => {
   const { currentStageIndex, solveMode } = useAppStore();
   const [open, setOpen] = useState(false);
+  const t = useTranslations();
+  const messages = useMessages() as any;
 
-  const desc = getStageDescription(currentStageIndex, solveMode);
+  const bucket = solveMode === "fast" ? "fastDesc" : "lblDesc";
+  const desc = messages?.stages?.[bucket]?.[String(currentStageIndex)];
   if (!desc) return null;
 
   return (
@@ -24,7 +26,7 @@ const StageInfo = () => {
           "bg-background"
         )}
       >
-        <span>풀이 원리 보기</span>
+        <span>{t("solve.showPrinciple")}</span>
         <span className="opacity-60">{open ? "▲" : "▼"}</span>
       </button>
       {open && (
@@ -42,16 +44,16 @@ const StageInfo = () => {
           )}
         >
           <div>
-            <span className="text-foreground font-medium">목표 · </span>
+            <span className="text-foreground font-medium">{t("solve.goal")}</span>
             <span className="text-muted-foreground">{desc.goal}</span>
           </div>
           <div>
-            <span className="text-foreground font-medium">방법 · </span>
+            <span className="text-foreground font-medium">{t("solve.approach")}</span>
             <span className="text-muted-foreground">{desc.approach}</span>
           </div>
           {desc.representativeAlgo && (
             <div>
-              <span className="text-foreground font-medium">대표 알고리즘 · </span>
+              <span className="text-foreground font-medium">{t("solve.algo")}</span>
               <pre className="inline whitespace-pre-wrap font-mono text-[0.7rem] text-foreground/90">
                 {desc.representativeAlgo}
               </pre>
@@ -59,7 +61,7 @@ const StageInfo = () => {
           )}
           {desc.tip && (
             <div>
-              <span className="text-foreground font-medium">팁 · </span>
+              <span className="text-foreground font-medium">{t("solve.tip")}</span>
               <span className="text-muted-foreground">{desc.tip}</span>
             </div>
           )}

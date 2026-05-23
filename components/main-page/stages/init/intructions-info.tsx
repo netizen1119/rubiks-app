@@ -3,8 +3,10 @@
 import { colorMapThree } from "@/lib/maps/cube";
 import { ICubeSide } from "@/types/types";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 const ScanInstructionsInfo = () => {
+  const t = useTranslations("deviceSelect");
   return (
     <motion.div
       initial={{ x: -200, opacity: 0 }}
@@ -12,38 +14,44 @@ const ScanInstructionsInfo = () => {
       exit={{ x: -200, opacity: 0 }}
       transition={{ ease: "easeInOut" }}
     >
-      <h1 className="font-extrabold tracking-tight text-[2.5rem] leading-[3rem]">Get Ready to Scan:</h1>
+      <h1 className="font-extrabold tracking-tight text-[2.5rem] leading-[3rem]">{t("instructionsHeading")}</h1>
       <span className="block text-xs text-muted-foreground max-w-[12rem] tracking-tight leading-[18px] mt-3 -mb-5">
         <ol className="list-decimal ml-[2ch] flex flex-col gap-[0.12rem]">
           <li>
-            Hold Your Cube: Position your cube in your hand so that the{" "}
-            <TextColor color="F">red center is facing you</TextColor>.
+            {t("instr1Before")}
+            <TextColor color="F">{t("instr1Red")}</TextColor>
+            {t("instr1After")}
           </li>
           <li>
-            <span>Orient the Sides:</span>
+            <span>{t("instr2Heading")}</span>
             <ul className="list-disc ml-[1ch]">
               <li>
-                <TextColor color="L">Left Side</TextColor>: Ensure the <TextColor color="L">blue center</TextColor> is
-                on the left side.
+                <TextColor color="L">{t("instr2LeftLabel")}</TextColor>
+                {t("instr2LeftBefore")}
+                <TextColor color="L">{t("instr2LeftColor")}</TextColor>
+                {t("instr2LeftAfter")}
               </li>
               <li>
-                <TextColor color="R">Right Side</TextColor>: Make sure the <TextColor color="R">green center</TextColor>{" "}
-                is on the right side.
+                <TextColor color="R">{t("instr2RightLabel")}</TextColor>
+                {t("instr2RightBefore")}
+                <TextColor color="R">{t("instr2RightColor")}</TextColor>
+                {t("instr2RightAfter")}
               </li>
               <li>
-                <TextColor color="U">Top Side</TextColor>: Position the <TextColor color="U">yellow center</TextColor>{" "}
-                on the top side.
+                <TextColor color="U">{t("instr2TopLabel")}</TextColor>
+                {t("instr2TopBefore")}
+                <TextColor color="U">{t("instr2TopColor")}</TextColor>
+                {t("instr2TopAfter")}
               </li>
               <li>
-                <TextColor color="D">Bottom Side</TextColor>: Keep the <TextColor color="D">white center</TextColor> on
-                the bottom side.
+                <TextColor color="D">{t("instr2BottomLabel")}</TextColor>
+                {t("instr2BottomBefore")}
+                <TextColor color="D">{t("instr2BottomColor")}</TextColor>
+                {t("instr2BottomAfter")}
               </li>
             </ul>
           </li>
-          <li>
-            Match the Preview: Use the 3D cube preview to visualize the correct orientation. Adjust your cube to match
-            the preview.
-          </li>
+          <li>{t("instr3")}</li>
         </ol>
       </span>
     </motion.div>

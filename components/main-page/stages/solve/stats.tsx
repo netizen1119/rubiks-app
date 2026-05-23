@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store/store";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 // solve 화면 통계: 현재 진행 step / 전체, 경과 시간, 단계별 이동 수.
 // 컴포넌트 마운트 시점부터 시간 측정 (initSolveCube 후 직후).
 const SolveStats = () => {
   const { cubeSolution, cubeSolutionStep, solveStages, currentStageIndex } =
     useAppStore();
+  const t = useTranslations("solve");
 
   const [elapsedSec, setElapsedSec] = useState(0);
   const [startTime] = useState<number>(() => Date.now());
@@ -44,16 +46,16 @@ const SolveStats = () => {
       )}
     >
       <span>
-        진행 <span className="text-foreground font-medium">{current} / {total}</span>
+        {t("progress")} <span className="text-foreground font-medium">{current} / {total}</span>
         <span className="opacity-60"> ({progressPct}%)</span>
       </span>
       <span className="opacity-60">|</span>
       <span>
-        이 단계 <span className="text-foreground font-medium">{stageMoves}</span>수
+        {t("stage")} <span className="text-foreground font-medium">{stageMoves}</span>{t("stageMovesUnit")}
       </span>
       <span className="opacity-60">|</span>
       <span>
-        시간 <span className="text-foreground font-medium font-mono">{fmtTime(elapsedSec)}</span>
+        {t("time")} <span className="text-foreground font-medium font-mono">{fmtTime(elapsedSec)}</span>
       </span>
     </div>
   );

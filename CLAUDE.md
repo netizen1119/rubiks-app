@@ -1,8 +1,9 @@
 # 프로젝트 컨텍스트
 
 ## 현재 상태
-3차 + 후속(UX 폴리시·반응형·카메라 스캔 복구·정리) 완료 (2026-05-21). 진행 내역:
-- `HANDOVER_v7.md` — **가장 최신** (나침반/반응형/HiDPI·조명/카메라 스캔 복구·코드 정리)
+연습 모드 + 스캔 흐름 안정화 + i18n 완료 (2026-05-21). 진행 내역:
+- `HANDOVER_v8.md` — **가장 최신** (스캔→solve 실패 복구, solve 나가기·i18n, 2-4 연습 모드[런타임 테스트 대기])
+- `HANDOVER_v7.md` — UX 폴리시/반응형/HiDPI·조명/카메라 스캔 복구·정리
 - `HANDOVER_v6.md` — 3차 (수준 선택 learn/fast → 모드별 솔버 분기, 도중 전환 토글)
 - `HANDOVER_v5.md` — 2차 작업 결과
 - `HANDOVER_v4.md` — 1차 완성 시점 (LBL 솔버 + 매뉴얼 입력)
@@ -10,7 +11,7 @@
 - `CLAUDE_CODE_PLAN.md` — 1차 작업 계획
 
 저장소: private `netizen1119/rubiks-app-private` (origin, SSH). public 포크는 `fork` remote.
-다음 후보: 테스트 범위 확대 / 6면 스캔→solve 흐름 점검 / 2-4 연습 모드 (HANDOVER_v7 §6).
+다음: 연습 모드 런타임 테스트 / 큐브 도착 후 카메라 매핑 검증 / 드래그 로직 DRY 통합 (HANDOVER_v8 §5).
 
 ## 기술 스택
 Next.js 14, React 18, Three.js, Zustand, TypeScript strict, Tailwind, GSAP

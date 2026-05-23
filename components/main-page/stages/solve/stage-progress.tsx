@@ -2,13 +2,20 @@
 
 import { useAppStore } from "@/lib/store/store";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 const TOTAL_STAGES = 8;
 
 const StageProgress = () => {
-  const { solveStages, currentStageIndex } = useAppStore();
+  const { solveStages, currentStageIndex, solveMode } = useAppStore();
+  const t = useTranslations();
 
-  const stageName = solveStages[currentStageIndex]?.stageName ?? "";
+  // 솔버는 단계 번호(1-based)를 stageIndex 로 들고 있다.
+  // 번역 키는 stages.lbl.{n} / stages.fast.{n} (1-based).
+  const stage = solveStages[currentStageIndex];
+  const stageNum = stage ? stage.stageIndex : 0;
+  const bucket = solveMode === "fast" ? "fast" : "lbl";
+  const stageName = stageNum ? t(`stages.${bucket}.${stageNum}` as any) : "";
 
   return (
     <div className="flex flex-col items-center gap-2">

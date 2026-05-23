@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { cameraPositions } from "@/lib/maps/camera-positions";
 import { useAppStore } from "@/lib/store/store";
+import { useCubeDrag } from "@/components/cube-visualization/use-cube-drag";
+import { ICubeMoves } from "@/lib/moves/moves";
 import { cn } from "@/lib/utils";
-import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useRef, useState } from "react";
 import StageProgress from "./stage-progress";
 import MoveGuide from "./move-guide";
 import StageInfo from "./stage-info";
@@ -19,6 +22,16 @@ const SPEED_OPTIONS = [0.5, 1, 1.5, 2, 3] as const;
 type Speed = (typeof SPEED_OPTIONS)[number];
 const BASE_TICK_MS = 450; // 1x 기준 tick 간격 (각 회전 phase 소요 ~0.4s + 버퍼)
 
+// 누적 이동수 기준 step 이 속한 단계 인덱스 (next-solve-step 와 동일 규칙).
+const stageIndexForStep = (stages: { moves: string[] }[], step: number): number => {
+  let cum = 0;
+  for (let i = 0; i < stages.length; i++) {
+    cum += stages[i].moves.length;
+    if (step < cum) return i;
+  }
+  return stages.length ? stages.length - 1 : 0;
+};
+
 const SolveCubeStage = () => {
   const {
     updateStore,
@@ -29,15 +42,22 @@ const SolveCubeStage = () => {
     nextCubeSolveStep,
     prevCubeSolveStep,
     solveMode,
+    solvePractice,
     cubeScale,
   } = useAppStore();
   const { toast } = useToast();
+  const t = useTranslations("solve");
+  const tCommon = useTranslations("common");
 
   const [isPlaying, setIsPlaying] = useState(false);
   // 빠른 모드는 풀이를 빨리 훑어보려는 사용자가 대상이라 기본 속도를 높게.
   const [speed, setSpeed] = useState<Speed>(() =>
     useAppStore.getState().solveMode === "fast" ? 2 : 1
   );
+  // 연습 모드에서 💡힌트로 다음 무브를 드러냈는지 (다음 step 으로 넘어가면 리셋).
+  const [hintRevealed, setHintRevealed] = useState(false);
+  // 더블(180°) 진행 추적: 같은 방향 쿼터 2회 중 첫 쿼터만 적용된 상태.
+  const practiceProgress = useRef<{ step: number; dir: string | null }>({ step: -1, dir: null });
 
   const inited = useRef(false);
   useEffect(() => {
@@ -64,8 +84,8 @@ const SolveCubeStage = () => {
       // 스캔으로 복귀해 재스캔 유도. (매뉴얼 입력은 항상 풀 수 있어 이 경로에 안 옴)
       toast({
         variant: "destructive",
-        title: "스캔을 다시 해주세요",
-        description: "스캔된 색 배치로는 큐브를 풀 수 없어요. 면 색을 확인하고 다시 스캔해주세요.",
+        title: t("scanRescanTitle"),
+        description: t("scanRescanDesc"),
         duration: 6000,
       });
       updateStore({ currentAppStage: "scan" });
@@ -195,8 +215,8 @@ const SolveCubeStage = () => {
       } catch {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "모드 전환 중 풀이 생성에 실패했습니다.",
+          title: t("errorTitle"),
+          description: t("switchModeError"),
           duration: Infinity,
         });
       }
@@ -216,6 +236,92 @@ const SolveCubeStage = () => {
     }
   };
 
+  // 연습 모드: 사용자가 드래그한 무브를 정답과 비교해 맞을 때만 적용·진행.
+  // 드래그는 쿼터(90°)만 만들므로 더블(X2)은 같은 방향 쿼터 2회로 처리.
+  const handleGuess = useCallback(
+    (move: string) => {
+      const st = useAppStore.getState();
+      const step = st.cubeSolutionStep;
+      if (step === null || st.isDuringRotation) return;
+      const expected = st.cubeSolution[step];
+      const face = expected[0];
+      const isDouble = expected.endsWith("2");
+
+      const advance = () => {
+        const s = useAppStore.getState();
+        const next = step + 1;
+        const done = next >= s.cubeSolution.length;
+        useAppStore.setState({
+          cubeSolutionStep: done ? null : next,
+          currentStageIndex: done
+            ? Math.max(0, s.solveStages.length - 1)
+            : stageIndexForStep(s.solveStages, next),
+        });
+        setHintRevealed(false);
+      };
+
+      const prog = practiceProgress.current;
+      const halfActive = prog.dir !== null && prog.step === step;
+
+      if (halfActive) {
+        // 더블의 두 번째 쿼터 — 같은 방향이어야 완성.
+        if (move === prog.dir) {
+          st.rotateCube(move as ICubeMoves);
+          practiceProgress.current = { step: -1, dir: null };
+          advance();
+        } else {
+          // 잘못 → 적용했던 첫 쿼터를 되돌리고 리셋.
+          const inv = prog.dir!.endsWith("'") ? prog.dir![0] : prog.dir! + "'";
+          st.rotateCube(inv as ICubeMoves);
+          practiceProgress.current = { step: -1, dir: null };
+          toast({ description: t("doubleHint"), duration: 1500 });
+        }
+        return;
+      }
+
+      if (move[0] !== face) {
+        toast({ description: t("wrongFace"), duration: 1500 });
+        return;
+      }
+
+      if (isDouble) {
+        // 첫 쿼터: 면만 맞으면 시작(방향은 둘 다 허용, 두 번째도 같은 방향이면 됨).
+        practiceProgress.current = { step, dir: move };
+        st.rotateCube(move as ICubeMoves);
+        return;
+      }
+
+      if (move !== expected) {
+        toast({ description: t("wrongDir"), duration: 1500 });
+        return;
+      }
+      st.rotateCube(move as ICubeMoves);
+      advance();
+    },
+    [toast, t]
+  );
+
+  const togglePractice = () => {
+    const st = useAppStore.getState();
+    if (st.isDuringRotation) return;
+    setIsPlaying(false);
+    // 더블 첫 쿼터만 적용된 상태면 되돌려 클린 경계 복원.
+    const prog = practiceProgress.current;
+    if (prog.dir !== null) {
+      const inv = prog.dir.endsWith("'") ? prog.dir[0] : prog.dir + "'";
+      st.rotateCube(inv as ICubeMoves);
+      practiceProgress.current = { step: -1, dir: null };
+    }
+    setHintRevealed(false);
+    updateStore({ solvePractice: !st.solvePractice });
+  };
+
+  // 연습 모드에서만 큐브 드래그 입력 활성 (해석된 무브를 handleGuess 로).
+  useCubeDrag({
+    enabled: solvePractice && cubeSolutionStep !== null,
+    onResolveMove: handleGuess,
+  });
+
   return (
     <div
       className="w-full h-full flex justify-center items-center flex-col gap-3"
@@ -228,15 +334,15 @@ const SolveCubeStage = () => {
         onClick={() => updateStore({ currentAppStage: "deviceselect" })}
         className="fixed top-4 left-4 z-50 rounded-md bg-black/40 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-black/60 backdrop-blur-sm transition-colors"
       >
-        ← 나가기
+        {tCommon("exit")}
       </button>
 
       {/* 모드 전환 토글 — 클릭 시 현재 위치에서 해당 모드로 이어 풀기. */}
       <div className="flex items-center gap-2 text-xs">
         <div className="flex rounded-full border border-border overflow-hidden">
           {([
-            { m: "learn" as const, label: "📚 차근차근" },
-            { m: "fast" as const, label: "⚡ 빠르게" },
+            { m: "learn" as const, label: t("modeLearnLabel") },
+            { m: "fast" as const, label: t("modeFastLabel") },
           ]).map(({ m, label }) => (
             <button
               key={m}
@@ -254,7 +360,18 @@ const SolveCubeStage = () => {
             </button>
           ))}
         </div>
-        <span className="text-muted-foreground">{cubeSolution.length}수</span>
+        <span className="text-muted-foreground">{t("movesCount", { count: cubeSolution.length })}</span>
+        <button
+          onClick={togglePractice}
+          className={cn(
+            "ml-1 rounded-full border px-2.5 py-0.5 transition-colors",
+            solvePractice
+              ? "border-sky-500/40 bg-sky-500/20 text-sky-300"
+              : "border-border text-muted-foreground hover:bg-muted"
+          )}
+        >
+          {solvePractice ? t("practiceOn") : t("practiceOff")}
+        </button>
       </div>
 
       <StageProgress />
@@ -269,7 +386,31 @@ const SolveCubeStage = () => {
         <CubePosAnchor />
       </div>
 
-      <MoveGuide />
+      {solvePractice ? (
+        <div className="flex h-[4.5rem] flex-col items-center justify-center gap-1">
+          {finished ? (
+            <p className="text-sm text-muted-foreground">{t("completedCelebrate")}</p>
+          ) : hintRevealed ? (
+            <>
+              <span className="text-3xl font-bold leading-none text-foreground">
+                {cubeSolution[cubeSolutionStep ?? 0]}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {t("practiceDoMove", { current: (cubeSolutionStep ?? 0) + 1, total: cubeSolution.length })}
+              </span>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-foreground">{t("practicePrompt")}</p>
+              <span className="text-xs text-muted-foreground">
+                {t("practiceHintHint", { current: (cubeSolutionStep ?? 0) + 1, total: cubeSolution.length })}
+              </span>
+            </>
+          )}
+        </div>
+      ) : (
+        <MoveGuide />
+      )}
 
       <SolveStats />
 
@@ -279,21 +420,29 @@ const SolveCubeStage = () => {
         <Button
           variant="secondary"
           onClick={() => prevCubeSolveStep()}
-          disabled={!canUndo}
+          disabled={!canUndo || solvePractice}
           className="px-3"
         >
-          ← 이전
+          {tCommon("prev")}
         </Button>
-        <Button
-          onClick={() => nextCubeSolveStep()}
-          disabled={finished}
-          className="flex-1"
-        >
-          {finished ? "완료" : "다음 이동 →"}
-        </Button>
+        {solvePractice ? (
+          <Button
+            variant="outline"
+            onClick={() => setHintRevealed(true)}
+            disabled={finished}
+            className="flex-1"
+          >
+            {t("hintButton")}
+          </Button>
+        ) : (
+          <Button onClick={() => nextCubeSolveStep()} disabled={finished} className="flex-1">
+            {finished ? tCommon("completed") : tCommon("next")}
+          </Button>
+        )}
       </div>
 
-      {/* 자동 재생 컨트롤 */}
+      {/* 자동 재생 컨트롤 — 연습 모드에선 숨김 */}
+      {!solvePractice && (
       <div
         className="flex items-center gap-3 text-xs text-muted-foreground"
         style={{ width: `${THREE_WIDTH - 160}px` }}
@@ -305,10 +454,10 @@ const SolveCubeStage = () => {
           disabled={finished}
           className="px-2"
         >
-          {isPlaying ? "⏸ 일시정지" : "▶ 자동 재생"}
+          {isPlaying ? t("pause") : t("play")}
         </Button>
         <div className="flex items-center gap-1 ml-auto">
-          <span className="opacity-70">속도</span>
+          <span className="opacity-70">{t("speedLabel")}</span>
           {SPEED_OPTIONS.map((s) => (
             <button
               key={s}
@@ -325,6 +474,7 @@ const SolveCubeStage = () => {
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 };

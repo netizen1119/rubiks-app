@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
 import TutorialOverlay from "./tutorial-overlay";
+import { useTranslations } from "next-intl";
 
 // 큐비의 현재 위치(world)로부터 격자 인덱스 (gx, gy, gz ∈ {-1, 0, 1}).
 // 메인 vis 큐비는 격자 -1~1 좌표에 놓여 있으며, rotateCubeAction 이 회전 후
@@ -74,6 +75,7 @@ const detectHitFace = (
 const ScrambleCube = () => {
   const { updateStore, updateCube, rotateCube, cubeScale } = useAppStore();
   const { toast } = useToast();
+  const t = useTranslations();
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
   // 호버 시 슬라이스의 두 방향 무브(pos/neg) 표시. 드래그 전에 어떤 무브가
   // 적용될지 미리 보여줌. 호버 외 null.
@@ -407,8 +409,8 @@ const ScrambleCube = () => {
     if (cur === solved_cube) {
       toast({
         variant: "destructive",
-        title: "이미 풀린 상태",
-        description: "큐브를 먼저 섞어주세요.",
+        title: t("manualInput.alreadySolvedTitle"),
+        description: t("manualInput.alreadySolvedDesc"),
         duration: 4000,
       });
       return;
@@ -427,8 +429,8 @@ const ScrambleCube = () => {
     try {
       await navigator.clipboard.writeText(moveHistory.join(" "));
       toast({
-        title: "복사됨",
-        description: `${moveHistory.length}개 무브를 클립보드에 복사했습니다.`,
+        title: t("common.copied"),
+        description: t("manualInput.copyToastDesc", { count: moveHistory.length }),
         duration: 2000,
       });
     } catch {
@@ -443,9 +445,9 @@ const ScrambleCube = () => {
     >
       <TutorialOverlay />
       <OrientationLabels />
-      <h1 className="text-lg font-semibold text-foreground">큐브를 스크램블하세요</h1>
+      <h1 className="text-lg font-semibold text-foreground">{t("manualInput.heading")}</h1>
       <p className="text-xs text-muted-foreground -mt-3 text-center max-w-[22rem]">
-        조각 면 위에 커서를 올리면 회전할 층이 강조됩니다. 그 방향으로 드래그해 회전.
+        {t("manualInput.hint")}
       </p>
       {/* 캔버스에 pointer-events: auto 가 적용되어 있어 wrapper 보다 캔버스가 크면 */}
       {/* 캔버스가 위/아래 버튼 영역을 덮어 클릭을 가로챈다. 캔버스 크기(스케일 반영)로 wrapper 지정. */}
@@ -460,9 +462,9 @@ const ScrambleCube = () => {
       <div className="text-xs text-muted-foreground h-4">
         {hoverHint ? (
           <span>
-            드래그 방향:{" "}
+            {t("manualInput.dragDirection")}{" "}
             <span className="font-mono text-foreground">{hoverHint.pos}</span>
-            <span className="opacity-60"> 또는 </span>
+            <span className="opacity-60">{t("manualInput.or")}</span>
             <span className="font-mono text-foreground">{hoverHint.neg}</span>
           </span>
         ) : null}
@@ -470,11 +472,11 @@ const ScrambleCube = () => {
 
       <div className="flex items-center gap-3">
         <Button variant="secondary" onClick={onReset}>
-          초기화
+          {t("common.reset")}
         </Button>
-        <Button onClick={onSolve}>이 상태로 풀기 →</Button>
+        <Button onClick={onSolve}>{t("manualInput.solve")}</Button>
         <Button variant="ghost" onClick={() => updateStore({ currentAppStage: "deviceselect" })}>
-          뒤로
+          {t("common.back")}
         </Button>
       </div>
 
@@ -482,12 +484,12 @@ const ScrambleCube = () => {
       {moveHistory.length > 0 && (
         <div className="w-full max-w-[24rem] mt-1">
           <div className="flex items-center justify-between text-[0.7rem] text-muted-foreground mb-1 px-1">
-            <span>무브 ({moveHistory.length})</span>
+            <span>{t("manualInput.movesLabel", { count: moveHistory.length })}</span>
             <button
               onClick={onCopyHistory}
               className="text-foreground hover:underline"
             >
-              📋 복사
+              {t("common.copy")}
             </button>
           </div>
           <div

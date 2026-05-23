@@ -2,10 +2,13 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 const MainPageHeading = () => {
-  const text = ["Scan.", "Solve.", "Be proud."];
-  const subText = ["Scan your cube with an", "smartphone and get step-by-step", "solution."];
+  const t = useTranslations("home");
+  // headingLine3 가 빈 문자열이면 줄 제거 (언어별로 줄 수가 달라질 수 있음).
+  const text = [t("headingLine1"), t("headingLine2"), t("headingLine3")].filter(Boolean);
+  const subText = [t("subText")];
 
   return (
     <div>

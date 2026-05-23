@@ -11,14 +11,6 @@ import type { LBLStage } from "./lbl-solver.ts";
 import { fcube_to_ifcube } from "./fcube-to-ifcube.ts";
 import { solve_thistlethwaite } from "./solve-thistlethwaite.ts";
 
-// Thistlethwaite 4 phase(G0→G1→G2→G3→G4)의 학습용 이름.
-const PHASE_META: { name: string; nameEn: string }[] = [
-  { name: "1단계: 모든 모서리 방향 맞추기", nameEn: "Edge Orientation (G1)" },
-  { name: "2단계: 코너 방향 + 중간층 정리", nameEn: "Domino Reduction (G2)" },
-  { name: "3단계: 색을 그룹으로 정렬", nameEn: "Permutation Setup (G3)" },
-  { name: "4단계: 반회전만으로 완성", nameEn: "Final Group (G4)" },
-];
-
 export const solveFast = (normalized: string): LBLStage[] => {
   const ifcube = fcube_to_ifcube(normalized);
   // phase 별 무브 문자열 배열. 풀 수 없으면 일부만 반환될 수 있어 호출부에서 검증.
@@ -26,8 +18,6 @@ export const solveFast = (normalized: string): LBLStage[] => {
 
   return phases.map((phase, i) => ({
     stageIndex: i + 1,
-    stageName: PHASE_META[i]?.name ?? `${i + 1}단계`,
-    stageNameEn: PHASE_META[i]?.nameEn ?? `Phase ${i + 1}`,
     moves: phase.trim().split(/ +/).filter(Boolean),
   }));
 };

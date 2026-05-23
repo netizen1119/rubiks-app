@@ -9,8 +9,10 @@ import { useAppStore } from "@/lib/store/store";
 import { motion } from "framer-motion";
 import ScanCard from "./card";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslations } from "next-intl";
 
 const ScanCubeStage = () => {
+  const t = useTranslations();
   const [video, setVideo] = useState<HTMLVideoElement>();
   const [canvas, setCanvas] = useState<HTMLCanvasElement>();
   const [streamStared, setStreamStarted] = useState(false);
@@ -65,8 +67,8 @@ const ScanCubeStage = () => {
       } catch (err) {
         toast({
           variant: "destructive",
-          title: "카메라를 열 수 없습니다",
-          description: "카메라 권한, 그리고 다른 앱이 카메라를 쓰고 있지 않은지 확인해주세요.",
+          title: t("scan.cameraOpenErrorTitle"),
+          description: t("scan.cameraOpenErrorDesc"),
           duration: Infinity,
         });
       }
@@ -96,7 +98,7 @@ const ScanCubeStage = () => {
         onClick={onBack}
         className="fixed top-4 left-4 z-50 rounded-md bg-black/60 px-3 py-1.5 text-sm text-white/90 backdrop-blur-sm hover:bg-black/75 transition-colors"
       >
-        ← 뒤로
+        {t("common.back")}
       </button>
       <motion.div
         className="flex w-screen h-screen relative  items-center justify-center"
