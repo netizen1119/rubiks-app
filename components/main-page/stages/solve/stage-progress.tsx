@@ -17,15 +17,27 @@ const StageProgress = () => {
   const bucket = solveMode === "fast" ? "fast" : "lbl";
   const stageName = stageNum ? t(`stages.${bucket}.${stageNum}` as any) : "";
 
+  // 모드별 실제 단계 수 (a11y aria-valuemax 용). 시각적 dot 갯수와 별개.
+  const totalForMode = solveMode === "fast" ? 4 : 8;
+
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="flex items-center gap-2">
+      <div
+        role="progressbar"
+        aria-label={t("solve.stageProgressLabel")}
+        aria-valuemin={1}
+        aria-valuemax={totalForMode}
+        aria-valuenow={Math.min(currentStageIndex + 1, totalForMode)}
+        aria-valuetext={stageName || undefined}
+        className="flex items-center gap-2"
+      >
         {Array.from({ length: TOTAL_STAGES }).map((_, i) => {
           const done = i < currentStageIndex;
           const current = i === currentStageIndex;
           return (
             <span
               key={`stage-dot-${i}`}
+              aria-hidden="true"
               className={cn(
                 "rounded-full transition-all",
                 done && "h-2 w-2 bg-foreground",

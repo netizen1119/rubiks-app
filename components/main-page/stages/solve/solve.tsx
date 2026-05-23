@@ -339,7 +339,11 @@ const SolveCubeStage = () => {
 
       {/* 모드 전환 토글 — 클릭 시 현재 위치에서 해당 모드로 이어 풀기. */}
       <div className="flex items-center gap-2 text-xs">
-        <div className="flex rounded-full border border-border overflow-hidden">
+        <div
+          role="group"
+          aria-label={t("modeGroupLabel")}
+          className="flex rounded-full border border-border overflow-hidden"
+        >
           {([
             { m: "learn" as const, label: t("modeLearnLabel") },
             { m: "fast" as const, label: t("modeFastLabel") },
@@ -347,6 +351,7 @@ const SolveCubeStage = () => {
             <button
               key={m}
               onClick={() => switchMode(m)}
+              aria-pressed={solveMode === m}
               className={cn(
                 "px-2.5 py-0.5 transition-colors",
                 solveMode === m
@@ -363,6 +368,8 @@ const SolveCubeStage = () => {
         <span className="text-muted-foreground">{t("movesCount", { count: cubeSolution.length })}</span>
         <button
           onClick={togglePractice}
+          aria-pressed={solvePractice}
+          aria-label={t("practiceAriaLabel")}
           className={cn(
             "ml-1 rounded-full border px-2.5 py-0.5 transition-colors",
             solvePractice
@@ -456,12 +463,13 @@ const SolveCubeStage = () => {
         >
           {isPlaying ? t("pause") : t("play")}
         </Button>
-        <div className="flex items-center gap-1 ml-auto">
+        <div role="group" aria-label={t("speedLabel")} className="flex items-center gap-1 ml-auto">
           <span className="opacity-70">{t("speedLabel")}</span>
           {SPEED_OPTIONS.map((s) => (
             <button
               key={s}
               onClick={() => setSpeed(s)}
+              aria-pressed={s === speed}
               className={
                 "px-1.5 py-0.5 rounded text-[0.7rem] transition-colors " +
                 (s === speed

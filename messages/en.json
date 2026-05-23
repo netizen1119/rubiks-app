@@ -92,6 +92,9 @@
   "solve": {
     "modeLearnLabel": "📚 Learn",
     "modeFastLabel": "⚡ Fast",
+    "modeGroupLabel": "Solve mode",
+    "practiceAriaLabel": "Toggle practice mode",
+    "stageProgressLabel": "Solve stage progress",
     "movesCount": "{count} moves",
     "practiceOn": "👁 Show solution",
     "practiceOff": "✋ I'll solve",

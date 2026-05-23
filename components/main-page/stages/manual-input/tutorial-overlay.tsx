@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
 const STORAGE_KEY = "manualInputTutorialSeen.v1";
+const TITLE_ID = "tutorial-overlay-title";
 
 // 매뉴얼 입력 첫 진입 시 1회용 안내 오버레이. localStorage 로 표시 여부 추적.
 const TutorialOverlay = () => {
   const [show, setShow] = useState(false);
   const t = useTranslations();
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     try {
@@ -29,6 +31,17 @@ const TutorialOverlay = () => {
     } catch {}
   };
 
+  // Esc 닫기 + 열림 시 close 버튼에 첫 포커스.
+  useEffect(() => {
+    if (!show) return;
+    closeBtnRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [show]);
+
   if (!show) return null;
 
   return (
@@ -41,6 +54,9 @@ const TutorialOverlay = () => {
       onClick={close}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={TITLE_ID}
         className={cn(
           "max-w-[28rem] mx-4 px-5 py-4 rounded-lg",
           "bg-zinc-900 border border-border shadow-2xl",
@@ -48,7 +64,7 @@ const TutorialOverlay = () => {
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-base font-semibold mb-3">{t("tutorial.title")}</h2>
+        <h2 id={TITLE_ID} className="text-base font-semibold mb-3">{t("tutorial.title")}</h2>
         <ul className="space-y-2 text-muted-foreground">
           <li>
             <span className="text-foreground font-medium">{t("tutorial.dragFaceTitle")}</span> ·{" "}
@@ -68,7 +84,7 @@ const TutorialOverlay = () => {
           </li>
         </ul>
         <div className="flex justify-end mt-4">
-          <Button onClick={close} size="sm">
+          <Button ref={closeBtnRef} onClick={close} size="sm">
             {t("common.start")}
           </Button>
         </div>

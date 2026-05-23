@@ -92,6 +92,9 @@
   "solve": {
     "modeLearnLabel": "📚 차근차근",
     "modeFastLabel": "⚡ 빠르게",
+    "modeGroupLabel": "풀이 모드",
+    "practiceAriaLabel": "내가 풀기 모드 토글",
+    "stageProgressLabel": "풀이 단계 진행",
     "movesCount": "{count}수",
     "practiceOn": "👁 풀이 보기",
     "practiceOff": "✋ 내가 풀기",
