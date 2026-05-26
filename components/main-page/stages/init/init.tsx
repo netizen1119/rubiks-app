@@ -19,9 +19,16 @@ const InitStage = () => {
 
   // 홈에서 풀이 모드(learn/fast)를 고르고 deviceselect 로 진행.
   const chooseMode = (mode: "learn" | "fast") => {
-    updateStore({ solveMode: mode, currentAppStage: "deviceselect" });
+    updateStore({ solveMode: mode, trackedSolve: false, currentAppStage: "deviceselect" });
 
     // Set the countdown for information/deviceselet screen
+    const interval = setInterval(() => setSeconds((seconds) => seconds - 1), 1000);
+    setTimeout(() => clearInterval(interval), informationButtonLockDuration + 200);
+  };
+
+  // 카메라 트래킹 모드: 알고리즘은 learn 그대로, scan/manual-input 종료 시 tracked-solve 로 분기.
+  const chooseTrackedMode = () => {
+    updateStore({ solveMode: "learn", trackedSolve: true, currentAppStage: "deviceselect" });
     const interval = setInterval(() => setSeconds((seconds) => seconds - 1), 1000);
     setTimeout(() => clearInterval(interval), informationButtonLockDuration + 200);
   };
@@ -83,6 +90,15 @@ const InitStage = () => {
                 animate={{ opacity: 1, y: 0, transition: { delay: 1.7 } }}
               >
                 {t("home.modeFast")}
+              </motion.button>
+            </Button>
+            <Button asChild variant="outline">
+              <motion.button
+                onClick={chooseTrackedMode}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: 1.8 } }}
+              >
+                {t("home.modeTracked")}
               </motion.button>
             </Button>
           </>

@@ -44,7 +44,8 @@ const ScanCard = () => {
     updateCube(oriented, true);
     const stream = useAppStore.getState().scanStream;
     stream?.getTracks().forEach((t) => t.stop());
-    updateStore({ currentAppStage: "solve", scanStream: null });
+    const nextStage = useAppStore.getState().trackedSolve ? "tracked-solve" : "solve";
+    updateStore({ currentAppStage: nextStage, scanStream: null });
   };
 
   return (

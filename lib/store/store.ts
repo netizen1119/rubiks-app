@@ -48,7 +48,7 @@ const getOrbitControlsDefault = () => {
   return c;
 };
 
-const appStages = ["homepage", "deviceselect", "scan", "manual-input", "solve"] as const;
+const appStages = ["homepage", "deviceselect", "scan", "manual-input", "solve", "tracked-solve"] as const;
 export type IAppStages = (typeof appStages)[number];
 
 export type Language = "ko" | "en";
@@ -82,6 +82,9 @@ const defaultStore = {
   // 풀이 모드: "learn" = 단계별 LBL(이해 학습), "fast" = Thistlethwaite 최단 풀이.
   // 홈에서 선택, init-solve-cube 가 분기. updateStore 로 변경 가능.
   solveMode: "learn" as "learn" | "fast",
+  // 카메라로 큐브를 실시간 추적하며 풀이하는 모드. true 면 scan/manual-input 완료 시
+  // "solve" 대신 "tracked-solve" 로 라우팅. 알고리즘은 solveMode("learn") 그대로 사용.
+  trackedSolve: false,
   // solve 연습 모드: true 면 사용자가 직접 드래그로 다음 무브를 맞춰야 진행(능동 학습).
   solvePractice: false,
   isDuringRotation: false,

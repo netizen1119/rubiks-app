@@ -18,7 +18,8 @@
     "headingLine3": "",
     "subText": "스마트폰으로 비추고, 단계별로 따라하세요.",
     "modeLearn": "차근차근 배우기",
-    "modeFast": "빠르게 풀이 보기"
+    "modeFast": "빠르게 풀이 보기",
+    "modeTracked": "카메라로 따라가며 풀기"
   },
   "deviceSelect": {
     "scanCount": "스캔 ({seconds})",
@@ -272,5 +273,9 @@
         "tip": "이 단계는 180° 회전만 쓰므로 보기에 깔끔하게 마무리된다."
       }
     }
+  },
+  "trackedSolve": {
+    "title": "카메라 트래킹 풀이",
+    "placeholder": "곧 들어옵니다 — 매핑 후 카메라가 큐브를 실시간으로 따라가며 풀이를 안내합니다."
   }
 }

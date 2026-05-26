@@ -18,7 +18,8 @@
     "headingLine3": "Be proud.",
     "subText": "Scan your cube with a smartphone and get a step-by-step solution.",
     "modeLearn": "Learn step by step",
-    "modeFast": "Show me the fastest solve"
+    "modeFast": "Show me the fastest solve",
+    "modeTracked": "Follow with camera"
   },
   "deviceSelect": {
     "scanCount": "Scan ({seconds})",
@@ -272,5 +273,9 @@
         "tip": "Because this stage only uses 180° turns, the finish looks especially clean."
       }
     }
+  },
+  "trackedSolve": {
+    "title": "Camera-tracked solve",
+    "placeholder": "Coming soon — after mapping the cube, the camera will follow your moves in real time and guide the solution."
   }
 }

@@ -184,7 +184,8 @@ const ScrambleCube = () => {
       });
       return;
     }
-    updateStore({ currentAppStage: "solve" });
+    const nextStage = useAppStore.getState().trackedSolve ? "tracked-solve" : "solve";
+    updateStore({ currentAppStage: nextStage });
   };
 
   const onReset = () => {

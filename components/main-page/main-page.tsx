@@ -10,6 +10,7 @@ import InitStage from "./stages/init/init";
 import ScanCubeStage from "./stages/scan/scan";
 import SolveCubeStage from "./stages/solve/solve";
 import ManualInputStage from "./stages/manual-input/scramble-cube";
+import TrackedSolveStage from "./stages/tracked-solve/tracked-solve";
 
 const MainPage = () => {
   const currentAppStage = useAppStore((state) => state.currentAppStage);
@@ -24,6 +25,7 @@ const MainPage = () => {
       {currentAppStage === "scan" && <ScanCubeStage key="scan-stage" />}
       {currentAppStage === "manual-input" && <ManualInputStage key="manual-input-stage" />}
       {currentAppStage === "solve" && <SolveCubeStage key="solve-stage" />}
+      {currentAppStage === "tracked-solve" && <TrackedSolveStage key="tracked-solve-stage" />}
       <CubeVisualization />
       {process.env.NEXT_PUBLIC_DEV_MODE === "true" && <CubeDevTools />}
     </div>
