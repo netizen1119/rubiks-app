@@ -276,6 +276,10 @@
   },
   "trackedSolve": {
     "title": "Camera-tracked solve",
-    "placeholder": "Coming soon — after mapping the cube, the camera will follow your moves in real time and guide the solution."
+    "placeholder": "Coming soon — after mapping the cube, the camera will follow your moves in real time and guide the solution.",
+    "calibrating": "Learning colors — slowly rotate the cube to show all 6 faces",
+    "calibCountdown": "{seconds}s left",
+    "loadingCV": "Loading cube detector…",
+    "cvLoadFailed": "Cube detector failed to load — check your network and retry"
   }
 }

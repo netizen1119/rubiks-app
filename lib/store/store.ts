@@ -98,6 +98,8 @@ const defaultStore = {
   orbitControls: getOrbitControlsDefault(),
   // 스캔 단계의 카메라 스트림 — 단계를 떠날 때 트랙을 정지해 카메라를 끄기 위해 보관.
   scanStream: null as MediaStream | null,
+  // 카메라 트래킹 풀이 모드의 스트림 — tracked-solve 진입 시 새로 획득, 이탈 시 정지.
+  trackStream: null as MediaStream | null,
   // 스캔된 각 면의 9칸(캡처 방향 그대로, 센터=면 색). 풀기 시 auto-orient 가 회전을 맞춰
   // 풀 수 있는 배치를 자동 산출 → 사용자는 면 방향을 신경 쓸 필요 없음.
   scannedFaces: {} as Partial<Record<ICubeSide, ICubeSide[]>>,
