@@ -8,12 +8,20 @@
 // Next.js 14 turbo 의 `new Worker(new URL("./*.ts", import.meta.url))` 패턴이 worker 를
 // 정적 asset(MIME=video/mp2t) 으로 emit 해 브라우저가 실행 거부하는 문제 회피.
 
+export type Pt = { x: number; y: number };
+
 export type EdgesResult = {
   edges: Uint8Array;
   width: number;
   height: number;
-  /** worker 가 추정한 큐브 후보 bbox. 손/벽/배경 잡음을 색 분류에서 빼주는 게이트. */
+  /** 9 sticker lattice 의 bbox. 손/벽/배경 잡음을 색 분류에서 빼주는 게이트 + 시각화. */
   roi: { x: number; y: number; w: number; h: number } | null;
+  /** 면의 9 sticker 중심 row-major (0=좌상, 4=중앙, 8=우하). null = 면 미검출. */
+  stickers: Pt[] | null;
+  /** sticker 한 변 추정 px. sampling 반경 파생용. */
+  side: number;
+  /** 디버그 overlay: candidate 사각형들 (각 4 corner). DEBUG_QUADS off 시 null. */
+  quads: Pt[][] | null;
 };
 
 export type CVWorkerClient = {
@@ -63,6 +71,9 @@ export const getCVWorker = (): CVWorkerClient => {
           width: msg.width,
           height: msg.height,
           roi: msg.roi ?? null,
+          stickers: msg.stickers ?? null,
+          side: msg.side ?? 0,
+          quads: msg.quads ?? null,
         });
       }
     } else if (msg.type === "error") {

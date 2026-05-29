@@ -11,16 +11,21 @@
 //                  { type: "frame", frameId, buffer, width, height } 반복 (buffer 는 transferable)
 //   worker → main: { type: "ready" }
 //                  { type: "load-failed", error }
-//                  { type: "result", frameId, edges, width, height, roi }
-//                    - edges 는 transferable Uint8Array buffer
-//                    - roi: { x, y, w, h } | null — 큐브 후보의 bbox (color 분류를 ROI 로 제한)
+//                  { type: "result", frameId, edges, width, height, roi, stickers, side, quads }
+//                    - edges 는 transferable Uint8Array buffer (raw Canny, 디버그 overlay 용)
+//                    - roi: { x, y, w, h } | null — 9 sticker lattice 의 bbox (시각화 + fallback 제한)
+//                    - stickers: {x,y}[9] | null — 면의 9 sticker 중심 row-major (0=좌상,4=중앙,8=우하)
+//                    - side: number — sticker 한 변 추정 px (sampling 반경 파생용)
+//                    - quads: {x,y}[][] | null — 디버그용 candidate 사각형 corners (DEBUG_QUADS off 면 null)
 //                  { type: "error", frameId, error }
 //
-// ROI 검출 전략 (C-1):
-//   Canny edges → findContours → 각 contour 에 대해 approxPolyDP 4-vertex 사각형 필터 +
-//   area 임계 + aspect ratio in [0.6, 1.7] 필터. 후보 중 가장 큰 면적 채택.
-//   이게 큐브의 한 면일 가능성 큼 (강한 grid edge + 사각형 윤곽). 손/벽/모니터의 곡면/직사각형은
-//   대부분 4-vertex 사각형 필터에서 떨어지거나 aspect 가 벗어남.
+// ROI 검출 전략 (v13 — contour + 9-neighbor):
+//   edge-density grid 접근은 폐기 (큐브 grid 가 구멍 뚫린 mesh 로 흩어져 cluster 가 면 일부만 잡음).
+//   실제 출시 스캐너(qbr/dwalton76/kociemba) 검증 파이프라인으로 전환:
+//     gray → blur → Canny → DILATE → findContours → quad 필터 → median 크기 게이트 → 9-neighbor.
+//   dilation 이 핵심 트릭 — 스티커 검은 테두리를 닫아 findContours 가 사각형(스티커 구멍)을 잡게 함.
+//   9-neighbor 구조 제약이 최강 anti-clutter — 면 중심 스티커는 8 이웃을 가지고, 손/배경의
+//   고립된 false 사각형은 이웃을 못 만들어 자동 탈락.
 
 const OPENCV_CDN = "https://docs.opencv.org/4.10.0/opencv.js";
 
@@ -57,76 +62,163 @@ const tryInit = () => {
   }
 };
 
-// ROI 후보 필터링 임계값들 — 480×270 = 129,600 px 기준 튜닝.
-// MIN_AREA: 큐브가 화면의 ~10% 이상은 차지해야 의미 있는 검출. 너무 작은 사각형은 노이즈.
-const ROI_MIN_AREA = 480 * 270 * 0.04; // 약 5,200 px
-// MAX_AREA: 화면 80% 이상은 책상 가장자리 같은 큰 사각형일 가능성 — 큐브는 가까이서도 그 정도 안 됨.
-const ROI_MAX_AREA = 480 * 270 * 0.7;
-// aspect ratio 가 정사각형에서 너무 멀면 큐브 면이 아님 (책장, 모니터 베젤 등).
-const ROI_ASPECT_MIN = 0.6;
-const ROI_ASPECT_MAX = 1.7;
-// approxPolyDP epsilon = perimeter * 비율. 0.04 면 어느 정도 angular noise 허용하면서 사각형 잡힘.
-const APPROX_EPSILON_RATIO = 0.04;
+// --- contour quad 필터 상수 (480×270 처리 해상도 기준) ---
+const APPROX_EPS_RATIO = 0.1; // approxPolyDP epsilon = 0.1 * perimeter — 사각형으로 단순화.
+const QUAD_ASPECT_MIN = 0.75; // 사각형 w/h 하한 (스티커 ≒ 정사각).
+const QUAD_ASPECT_MAX = 1.35; // 사각형 w/h 상한.
+const QUAD_FILL_MIN = 0.4; // area / (bboxW·bboxH) — 사각형은 bbox 를 잘 채움 (회전/사다리꼴 거름).
+const QUAD_MIN_AREA = 50; // 절대 면적 하한 (노이즈 점 제거).
+// median 상대 크기 게이트 — 카메라 거리 자동 적응 (절대 px 하드코딩 금지, v13 §3-4).
+const SIZE_MED_MIN = 0.5; // median side 의 0.5× 미만 거름.
+const SIZE_MED_MAX = 2.0; // median side 의 2.0× 초과 거름.
+// 9-neighbor 구조 제약 — 면 중심 스티커는 인접 8 스티커를 거리 NEIGHBOR_DIST_RATIO×side 안에 둔다.
+const NEIGHBOR_DIST_RATIO = 1.8; // anchor 기준 이웃 판정 반경 = 이 배수 × anchor.side.
+const FACE_MIN_NEIGHBORS = 4; // anchor 의 최소 이웃 수 (부분 가림 허용; 완전 9면이면 중심=8).
+// dilate kernel — Canny edge(스티커 검은 테두리)를 닫아 사각형 contour 형성.
+const DILATE_KERNEL = 7;
+// 디버그: candidate 사각형들을 main 으로 회신해 overlay 로 시각화. 튜닝 끝나면 false.
+const DEBUG_QUADS = true;
 
-const detectCubeROI = (cv, edges) => {
-  let closed = null;
-  let kernel = null;
-  let contours = null;
-  let hierarchy = null;
-  let approx = null;
+// 이진 마스크(dilated Canny)에서 큐브 한 면의 9 sticker 좌표를 산출.
+// 반환: { roi, stickers, side, quads }. 면 미검출 시 stickers=null (roi/quads 도 가능한 만큼만).
+const detectCubeFace = (cv, bin) => {
+  const result = { roi: null, stickers: null, side: 0, quads: null };
+  const contours = new cv.MatVector();
+  const hierarchy = new cv.Mat();
   try {
-    // Canny edges 가 큐브 grid 에서 끊긴 점선처럼 잡혀서 findContours 가 큐브 외곽을 하나의
-    // 닫힌 contour 로 못 잡는 문제 → morphological CLOSE(dilate→erode) 로 작은 갭 메우기.
-    // 5×5 kernel 이면 점선 같은 1~3px 갭은 잘 닫힘. 큐브 grid 끼리도 연결되긴 하지만
-    // RETR_EXTERNAL 로 외곽만 받으니 무방.
-    closed = new cv.Mat();
-    kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5));
-    cv.morphologyEx(edges, closed, cv.MORPH_CLOSE, kernel);
+    cv.findContours(bin, contours, hierarchy, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
 
-    contours = new cv.MatVector();
-    hierarchy = new cv.Mat();
-    // RETR_EXTERNAL: 외곽 contour 만. 큐브 내부 grid 사각형들은 자동으로 무시.
-    // CHAIN_APPROX_SIMPLE: 직선 구간 압축으로 점 수 감소 → 후속 approxPolyDP 부담 ↓.
-    cv.findContours(closed, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
-    let bestArea = 0;
-    let best = null;
+    // 1) per-contour quad 필터 → candidate 사각형 수집.
+    const cands = []; // { cx, cy, side, corners:[{x,y}×4] }
     const n = contours.size();
     for (let i = 0; i < n; i++) {
-      const c = contours.get(i);
-      try {
-        const area = cv.contourArea(c);
-        if (area < ROI_MIN_AREA || area > ROI_MAX_AREA) continue;
-        const peri = cv.arcLength(c, true);
-        approx = new cv.Mat();
-        cv.approxPolyDP(c, approx, APPROX_EPSILON_RATIO * peri, true);
-        // 큐브가 한 면 보이면 quadrilateral(4), 두/세 면 보이면 perspective 로 hexagon(6) 까지.
-        // approxPolyDP 노이즈로 점 1~2 더 끼는 경우 흡수해 4~10 허용.
-        const verts = approx.rows;
-        approx.delete();
-        approx = null;
-        if (verts < 4 || verts > 10) continue;
-        const rect = cv.boundingRect(c);
-        if (rect.width <= 0 || rect.height <= 0) continue;
-        const aspect = rect.width / rect.height;
-        if (aspect < ROI_ASPECT_MIN || aspect > ROI_ASPECT_MAX) continue;
-        if (area > bestArea) {
-          bestArea = area;
-          best = { x: rect.x, y: rect.y, w: rect.width, h: rect.height };
+      const cnt = contours.get(i);
+      const peri = cv.arcLength(cnt, true);
+      const approx = new cv.Mat();
+      cv.approxPolyDP(cnt, approx, APPROX_EPS_RATIO * peri, true);
+      if (approx.rows === 4 && cv.isContourConvex(approx)) {
+        const d = approx.data32S; // [x0,y0, x1,y1, x2,y2, x3,y3]
+        const xs = [d[0], d[2], d[4], d[6]];
+        const ys = [d[1], d[3], d[5], d[7]];
+        const minX = Math.min(xs[0], xs[1], xs[2], xs[3]);
+        const maxX = Math.max(xs[0], xs[1], xs[2], xs[3]);
+        const minY = Math.min(ys[0], ys[1], ys[2], ys[3]);
+        const maxY = Math.max(ys[0], ys[1], ys[2], ys[3]);
+        const bw = maxX - minX;
+        const bh = maxY - minY;
+        const area = Math.abs(cv.contourArea(approx));
+        const aspect = bh > 0 ? bw / bh : 0;
+        const fill = bw > 0 && bh > 0 ? area / (bw * bh) : 0;
+        if (
+          bw > 0 &&
+          bh > 0 &&
+          area >= QUAD_MIN_AREA &&
+          aspect >= QUAD_ASPECT_MIN &&
+          aspect <= QUAD_ASPECT_MAX &&
+          fill >= QUAD_FILL_MIN
+        ) {
+          cands.push({
+            cx: (minX + maxX) / 2,
+            cy: (minY + maxY) / 2,
+            side: (bw + bh) / 2,
+            corners: [
+              { x: d[0], y: d[1] },
+              { x: d[2], y: d[3] },
+              { x: d[4], y: d[5] },
+              { x: d[6], y: d[7] },
+            ],
+          });
         }
-      } finally {
-        c.delete();
+      }
+      approx.delete();
+      cnt.delete();
+    }
+    if (cands.length === 0) return result;
+
+    // 2) median 상대 크기 게이트 — 비슷한 크기 사각형만 남겨 큐브 grid 와 무관한 잡음 제거.
+    const sortedSides = cands.map((c) => c.side).sort((a, b) => a - b);
+    const medSide = sortedSides[sortedSides.length >> 1];
+    const sized = cands.filter(
+      (c) => c.side >= medSide * SIZE_MED_MIN && c.side <= medSide * SIZE_MED_MAX,
+    );
+    result.quads = DEBUG_QUADS ? sized.map((c) => c.corners) : null;
+    if (sized.length === 0) return result;
+
+    // 3) 9-neighbor anchor — 이웃이 가장 많은 사각형 = 면 중심 스티커 (3×3 정중앙은 8 이웃).
+    let bestIdx = -1;
+    let bestCount = -1;
+    for (let i = 0; i < sized.length; i++) {
+      const a = sized[i];
+      const thr = NEIGHBOR_DIST_RATIO * a.side;
+      let cnt = 0;
+      for (let j = 0; j < sized.length; j++) {
+        if (i === j) continue;
+        const dx = sized[j].cx - a.cx;
+        const dy = sized[j].cy - a.cy;
+        if (Math.hypot(dx, dy) <= thr) cnt++;
+      }
+      if (cnt > bestCount) {
+        bestCount = cnt;
+        bestIdx = i;
       }
     }
-    return best;
+    if (bestIdx < 0 || bestCount < FACE_MIN_NEIGHBORS) return result; // 고립 → 면 아님.
+
+    // 4) face set = anchor + 반경 내 이웃. spacing = set 내 최근접 이웃 거리의 median (sticker pitch).
+    const anchor = sized[bestIdx];
+    const thr = NEIGHBOR_DIST_RATIO * anchor.side;
+    const faceSet = sized.filter((c) => {
+      const dx = c.cx - anchor.cx;
+      const dy = c.cy - anchor.cy;
+      return Math.hypot(dx, dy) <= thr;
+    });
+    let spacing = medSide;
+    if (faceSet.length >= 2) {
+      const nn = [];
+      for (let i = 0; i < faceSet.length; i++) {
+        let m = Infinity;
+        for (let j = 0; j < faceSet.length; j++) {
+          if (i === j) continue;
+          const dx = faceSet[j].cx - faceSet[i].cx;
+          const dy = faceSet[j].cy - faceSet[i].cy;
+          const dd = Math.hypot(dx, dy);
+          if (dd < m) m = dd;
+        }
+        if (Number.isFinite(m)) nn.push(m);
+      }
+      nn.sort((a, b) => a - b);
+      if (nn.length) spacing = nn[nn.length >> 1];
+    }
+
+    // 5) anchor 중심 기준 3×3 lattice → 9 sticker 좌표 row-major (0=좌상, 4=중앙, 8=우하).
+    //    front-facing 가정 (축 정렬). perspective 강할 땐 다음 iteration warpPerspective 로 보정.
+    const stickers = [];
+    for (let r = -1; r <= 1; r++) {
+      for (let c = -1; c <= 1; c++) {
+        stickers.push({ x: anchor.cx + c * spacing, y: anchor.cy + r * spacing });
+      }
+    }
+    result.stickers = stickers;
+    result.side = anchor.side;
+
+    // 6) roi bbox = lattice 범위 + 반 sticker 여백 (시각화 + connected-component fallback 제한용).
+    const half = anchor.side / 2;
+    const minX = anchor.cx - spacing - half;
+    const maxX = anchor.cx + spacing + half;
+    const minY = anchor.cy - spacing - half;
+    const maxY = anchor.cy + spacing + half;
+    result.roi = {
+      x: Math.max(0, minX),
+      y: Math.max(0, minY),
+      w: maxX - minX,
+      h: maxY - minY,
+    };
+    return result;
   } catch {
-    return null;
+    return result;
   } finally {
-    if (approx) approx.delete();
-    if (kernel) kernel.delete();
-    if (closed) closed.delete();
-    if (contours) contours.delete();
-    if (hierarchy) hierarchy.delete();
+    contours.delete();
+    hierarchy.delete();
   }
 };
 
@@ -138,22 +230,41 @@ const processFrame = (frameId, buffer, width, height) => {
   let src = null;
   let gray = null;
   let edges = null;
+  let closed = null;
+  let kernel = null;
   try {
     const data = new Uint8ClampedArray(buffer);
     const img = new ImageData(data, width, height);
     src = cv.matFromImageData(img);
     gray = new cv.Mat();
     edges = new cv.Mat();
+    closed = new cv.Mat();
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0, 0);
-    // Canny 임계 50/150 — OpenCV 튜토리얼 표준. 큐브 스티커 grid 검은 선은 강한 edge.
-    cv.Canny(gray, edges, 50, 150);
-    const roi = detectCubeROI(cv, edges);
-    // edges.data 는 Mat 내부 view → 복사해서 transferable 로 반환.
+    // blur 3×3 — qbr 기준. 약한 스티커 grid edge 보존하며 노이즈만 억제.
+    cv.GaussianBlur(gray, gray, new cv.Size(3, 3), 0, 0);
+    // Canny 30/60 — 스티커 검은 grid 선의 약한 edge 도 잡게 낮춤.
+    cv.Canny(gray, edges, 30, 60);
+    // dilate — 끊긴 스티커 테두리를 닫아 findContours 가 사각형(구멍)을 잡게 하는 핵심 트릭.
+    kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(DILATE_KERNEL, DILATE_KERNEL));
+    cv.dilate(edges, closed, kernel);
+
+    const { roi, stickers, side, quads } = detectCubeFace(cv, closed);
+
+    // overlay 는 raw Canny(edges) 회신 — dilated(closed) 가 아닌 얇은 선이 시각 디버그에 유리.
     const out = new Uint8Array(edges.data.length);
     out.set(edges.data);
     post(
-      { type: "result", frameId, edges: out.buffer, width, height, roi },
+      {
+        type: "result",
+        frameId,
+        edges: out.buffer,
+        width,
+        height,
+        roi,
+        stickers,
+        side,
+        quads,
+      },
       [out.buffer],
     );
   } catch (e) {
@@ -162,6 +273,8 @@ const processFrame = (frameId, buffer, width, height) => {
     if (src) src.delete();
     if (gray) gray.delete();
     if (edges) edges.delete();
+    if (closed) closed.delete();
+    if (kernel) kernel.delete();
   }
 };
 
