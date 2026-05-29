@@ -79,16 +79,42 @@ M  tracked-solve.tsx          (stickers 통합 + 시각화 교체 + 상태줄)
 
 ---
 
-## 4. 다음 세션 재개 — Phase 2b
+## 4. 다음 세션 재개 — Phase 2b (확정안, 2026-05-29 브리핑)
 
-목표: 9-tuple 색 배열을 시간순으로 추적 → 면 무브 감지.
-1. `lastGridRef` 의 `cells[9]` 를 시간순 버퍼에 쌓기.
-2. **idle/moving/settled state machine**: 프레임 간 9-tuple 변화량으로 모션 게이트.
-   settled(안정) → 직전 settled 와 비교.
-3. **18 무브 가설 검색**: 한 면 무브(U/D/F/B/L/R × ' / 2 = 18)가 9-tuple 을 어떻게 바꾸는지
-   예측 테이블 → 관측된 before→after 와 매칭되는 무브 후보 확정.
-4. `lib/vision/move-detector.ts` 의 stub 자리에 본 구현 (HANDOVER_v11 §3-3 설계).
-5. 확정 무브 → `tracker-bridge.ts` → store dispatch (Phase 3).
+### 결정적 통찰: blind 복원 아님, **forward-model 매칭**
+tracked-solve 진입 시 **풀 큐브 상태 S 를 이미 안다** (scan/manual-input → `store.cube` 54자).
+카메라는 한 면만 본다. 무브 감지 = 18 후보를 S 에 적용해 보이는 면 예측 → 관측과 비교 → 최선 일치.
+
+이미 있는 무기 (확인됨):
+- `store.cube` — 54자 현재 상태 S (tracked-solve 에서 읽기 가능).
+- `applyMove(S, m)` / `applyMoves` (`lib/solver/lbl-solver.ts`) — **문자열 레벨 forward model**. 순수 함수.
+- `store.rotateCube(m)` — 확정 무브를 3D vis + S 에 반영 (애니메이션 포함).
+- `grid.cells[9]` (`lastGridRef`) — 관측된 보이는 면 9-tuple.
+
+### 확정 설계 결정 (브리핑)
+- **방향 lock = 초기 1회**: 첫 settled 에서 known S 면 9칸 vs 관측 9-tuple 4회전 비교 →
+  맞는 orient(0/90/180/270) 확정 후 고정. 사용자가 면 회전 안 바꾼다 가정.
+- **감지 대상 = 감지가능 부분집합만 + 안내**: 정면(=보이는 면) 기준 15 무브 —
+  면 전체회전 `F/F'/F2`(9칸 in-place 순열) + 인접 layer 한 줄 교체 `U/D/L/R × '/2`(12).
+  **안 보임**: `B/B'/B2`(뒷면) + 정면 미접촉 슬라이스 → 미매칭 시 "풀이 면을 카메라로" toast.
+  (보이는 면 라벨 따라 15무브 동적 매핑 — 정면이 U/R/… 일 때 회전.)
+
+### 구현 순서
+1. **`lib/vision/move-detector.ts`** — stub 시그니처 변경
+   (`(prevTuple, currTuple, S, faceLabel, orient) → MoveCandidate|null`):
+   - state machine: 9-tuple 해밍 δ 로 idle/moving/settled. settled 진입 시만 가설 검색.
+   - 각 m: `applyMove(S, m)` → lock 된 (face, orient) 로 보이는 면 9칸 추출 → 관측 해밍 스코어.
+     최고 & 임계(예: 8/9) → 후보. 미매칭(B 등) → null + unmatched 플래그.
+2. **방향 lock 헬퍼** (신규 or move-detector 내): 첫 settled orient 확정 후 고정. lock 실패 재시도.
+3. **`lib/vision/tracker-bridge.ts`** — `commitDetectedMove` → `store.rotateCube(m)`.
+4. **`tracked-solve.tsx`** — `lastGridRef` → prev/curr tuple 버퍼, detector tick, commit, unmatched toast.
+5. **단위 테스트 우선**: forward-model 은 순수(`applyMove`) → 카메라 없이 "알려진 무브 → 예측 9칸 →
+   detector 가 그 무브 복원" round-trip 으로 로직 90% 검증. Phase 2b 안전판.
+
+### 리스크
+- lock 실패(첫 면 색 캘리브 미수렴) → 재시도 필요.
+- 해밍 임계 8/9: 색 1칸 오분류 허용. 빡세면 놓침, 느슨하면 오확정.
+- 빠른 연속 무브 → moving 못 빠져나옴 (15fps back-pressure). 천천히 권장 안내.
 
 ### 잔여 튜닝/한계 (Phase 2b 전 선택)
 - `DEBUG_QUADS=true` — 디버그 끝나면 false (빨강 사각형 overlay 끔).
