@@ -26,10 +26,11 @@ export type MoveCandidate = {
 
 // 면 라벨 9칸(row-major)을 향한 카메라 ↔ S 사이 회전. 사용자가 큐브를 어떻게 들었는지에 따라
 // 카메라 row-major 가 S row-major 대비 0/90/180/270 회전돼 있을 수 있다 → orient lock 으로 해소.
-type FaceLetter = Exclude<ICubeSide, "X">;
+/** 면 라벨(센터 색에서 파생). "X"(미분류) 제외 — 추적 front 면은 항상 6색 중 하나. */
+export type FaceLabel = Exclude<ICubeSide, "X">;
 
 // 마주 보는 면 — front 면을 카메라로 볼 때 그 반대면(+반대면 무브)은 보이지 않는다.
-const OPPOSITE: Record<FaceLetter, FaceLetter> = {
+const OPPOSITE: Record<FaceLabel, FaceLabel> = {
   U: "D",
   D: "U",
   R: "L",
@@ -73,7 +74,7 @@ const hamming = (a: string[], b: string[]): number => {
  * 반대면 그룹(예: front=F → B/B'/B2)은 front 9칸을 건드리지 않아 카메라로 구분 불가 → 제외.
  * 결과 15 무브.
  */
-export const detectableMoves = (front: FaceLetter): ICubeMoves[] => {
+export const detectableMoves = (front: FaceLabel): ICubeMoves[] => {
   const hidden = OPPOSITE[front];
   return FACE_MOVES.filter((m) => m[0] !== hidden);
 };
@@ -84,7 +85,7 @@ export const detectableMoves = (front: FaceLetter): ICubeMoves[] => {
  */
 export const lockOrientation = (
   S: string,
-  faceLabel: FaceLetter,
+  faceLabel: FaceLabel,
   observed: string[],
   maxHamming = 1,
 ): { orient: number; hamming: number } | null => {
@@ -108,7 +109,7 @@ export const lockOrientation = (
  */
 export const searchMove = (
   S: string,
-  faceLabel: FaceLetter,
+  faceLabel: FaceLabel,
   orient: number,
   observed: string[],
   threshold = 1,
@@ -142,7 +143,7 @@ export const detectMove = (
   prevTuple: string[],
   currTuple: string[],
   S: string,
-  faceLabel: FaceLetter,
+  faceLabel: FaceLabel,
   orient: number,
   opts?: { threshold?: number },
 ): MoveCandidate | null => {

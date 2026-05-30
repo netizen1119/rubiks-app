@@ -280,6 +280,7 @@
     "calibrating": "Learning colors — slowly rotate the cube to show all 6 faces",
     "calibCountdown": "{seconds}s left",
     "loadingCV": "Loading cube detector…",
-    "cvLoadFailed": "Cube detector failed to load — check your network and retry"
+    "cvLoadFailed": "Cube detector failed to load — check your network and retry",
+    "showSolveFace": "Couldn't read the move — point the camera straight at the face you're turning"
   }
 }

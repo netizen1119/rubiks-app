@@ -19,7 +19,10 @@ import {
 } from "@/lib/helpers/classify-scan-color";
 import { getCVWorker, type CVWorkerClient, type Pt } from "@/lib/vision/cv-worker-client";
 import { sampleFaceGridFromStickers, type FaceGrid } from "@/lib/vision/grid-sampler";
+import { lockOrientation, searchMove, type FaceLabel } from "@/lib/vision/move-detector";
+import { commitDetectedMove } from "@/lib/vision/tracker-bridge";
 import type { ICubeSide } from "@/types/types";
+import type { ICubeMoves } from "@/lib/moves/moves";
 
 // ScanColor → 면 라벨 (pose-lock 의 SCAN_TO_FACE 와 동일 매핑).
 // 9-grid 정중앙 cell 의 ScanColor 를 면 라벨로 변환할 때 사용.
@@ -62,6 +65,25 @@ const PROC_MIN_INTERVAL_MS = 66;
 // 1초 = ~15 frame. 큐브 잠깐 가려져도 ROI 유지하되, frame 밖으로 빠진 큐브의 옛 ROI 는 사라짐.
 const ROI_STALE_MS = 1000;
 
+// --- Phase 2b 무브 감지 상태머신 임계 (면 라벨 9칸 해밍 기준) ---
+// 기준 면 대비 이만큼 칸이 바뀌면 moving 진입 (색 1칸 지터는 무시).
+const MOVE_DELTA_MIN = 2;
+// moving 중 연속 "정지" 프레임 수 → settled (가설 검색 트리거).
+const SETTLE_FRAMES = 2;
+// 프레임간 해밍 이하 = 정지로 간주.
+const SETTLE_FRAME_DELTA = 1;
+// searchMove 허용 해밍 (색 1칸 오분류 허용). 초과 시 미매칭.
+const MATCH_THRESHOLD = 1;
+// 연속 미매칭 settle 이만큼 → 방향 lock 이 틀렸다고 보고 재lock + 안내.
+const RELOCK_AFTER_UNMATCHED = 4;
+
+// 면 라벨 9칸 사이 해밍 거리.
+const tupleDelta = (a: string[], b: string[]): number => {
+  let d = 0;
+  for (let i = 0; i < 9; i++) if (a[i] !== b[i]) d++;
+  return d;
+};
+
 // OpenCV.js 디버그 경로. main-thread Canny 가 hang 시키던 문제를 Worker 격리로 해결 (v10 A).
 // Worker 가 별도 스레드에서 cvtColor → GaussianBlur → Canny 수행, 결과 edges 만 transferable 로 회신.
 const ENABLE_OPENCV_DEBUG = true;
@@ -97,6 +119,8 @@ const TrackedSolveStage = () => {
   const [pose, setPose] = useState<CubePose | null>(null);
   // 9-grid 정중앙 cell 이 추정한 현재 보이는 면. 상태 라인 표시용.
   const [currentFace, setCurrentFace] = useState<ICubeSide | null>(null);
+  // 마지막으로 확정·commit 된 무브. 상태 라인 표시용.
+  const [lastMove, setLastMove] = useState<ICubeMoves | null>(null);
   // 9 sticker 검출/분류 상태 — 상태 라인을 stickers primary 기준으로 표시 (pose 0/6 대신).
   const [gridState, setGridState] = useState<{ detected: boolean; classified: number }>({
     detected: false,
@@ -125,6 +149,21 @@ const TrackedSolveStage = () => {
   const lastGridRef = useRef<FaceGrid | null>(null);
   // 디버그: worker 의 candidate 사각형들 — contour 검출이 어디를 사각형으로 잡는지 overlay 로 확인.
   const lastQuadsRef = useRef<Pt[][] | null>(null);
+
+  // --- Phase 2b 무브 감지 상태머신 (forward-model) ---
+  // 방향 lock: 첫 안정 tracking 프레임에서 known S 면 9칸 vs 관측 4회전 → orient 확정 후 고정.
+  const trackOrientRef = useRef<number | null>(null);
+  const trackFaceRef = useRef<FaceLabel | null>(null);
+  // 마지막 "안정 기준" 면 tuple (면 라벨). 무브 commit 후 새 면으로 갱신.
+  const stableTupleRef = useRef<string[] | null>(null);
+  // 직전 프레임 tuple — 프레임간 정지 판정용.
+  const prevFrameTupleRef = useRef<string[] | null>(null);
+  // idle ↔ moving. settled 는 순간 이벤트라 상태로 안 둠.
+  const moveStateRef = useRef<"idle" | "moving">("idle");
+  // moving 중 연속 정지 프레임 수 — SETTLE_FRAMES 도달 시 settled.
+  const settleCountRef = useRef(0);
+  // 연속 미매칭 settle 수 — RELOCK_AFTER_UNMATCHED 초과 시 재lock.
+  const unmatchedRunRef = useRef(0);
 
   // OpenCV.js Worker 기동 — 첫 사용자에게 7MB WASM 다운로드. 캐시 후엔 즉시.
   // Worker 내부에서 importScripts(CDN) → onRuntimeInitialized → "ready" 메시지.
@@ -363,6 +402,93 @@ const TrackedSolveStage = () => {
     }
   };
 
+  // tracking phase 무브 감지 — 9-grid → 면 라벨 tuple → 방향 lock → idle/moving/settled →
+  // settled 시 forward-model 가설 검색 → 확정 무브 commit (store.rotateCube + S 갱신).
+  // 순수 코어(lockOrientation/searchMove)는 move-detector 가 단위 테스트로 검증; 여기선
+  // 프레임 타이밍(디바운스) + store 연동만 담당.
+  const runMoveDetection = (grid: FaceGrid) => {
+    // 9칸 전부 분류돼야 신뢰 (X = 가림/노이즈 → skip, 상태 불변).
+    if (grid.cells.some((c) => c === "X")) return;
+    const currTuple = grid.cells.map((c) => SCAN_TO_FACE_LOCAL[c as ScanColor]) as string[];
+    const faceLabel = SCAN_TO_FACE_LOCAL[grid.cells[4] as ScanColor] as FaceLabel;
+    const S = useAppStore.getState().cube;
+
+    // 방향 lock 미확정 → 시도. 성공 시 baseline 잡고 고정.
+    if (trackOrientRef.current === null) {
+      const lock = lockOrientation(S, faceLabel, currTuple, MATCH_THRESHOLD);
+      if (lock) {
+        trackOrientRef.current = lock.orient;
+        trackFaceRef.current = faceLabel;
+        stableTupleRef.current = currTuple;
+        prevFrameTupleRef.current = currTuple;
+        moveStateRef.current = "idle";
+        settleCountRef.current = 0;
+        unmatchedRunRef.current = 0;
+      }
+      return;
+    }
+
+    const orient = trackOrientRef.current;
+    const trackFace = trackFaceRef.current;
+    if (orient === null || trackFace === null) return; // lock 후 항상 non-null (방어 + TS narrowing).
+
+    // lock 된 면과 다른 면이 보임 → 추적 대상 아님 (큐브 통째 돌림). baseline 만 갱신하고 무시.
+    if (faceLabel !== trackFace) {
+      prevFrameTupleRef.current = currTuple;
+      return;
+    }
+
+    const stable = stableTupleRef.current ?? currTuple;
+    const prevFrame = prevFrameTupleRef.current ?? currTuple;
+    const baselineDelta = tupleDelta(currTuple, stable);
+    const frameDelta = tupleDelta(currTuple, prevFrame);
+    prevFrameTupleRef.current = currTuple;
+
+    if (moveStateRef.current === "idle") {
+      if (baselineDelta >= MOVE_DELTA_MIN) {
+        moveStateRef.current = "moving";
+        settleCountRef.current = 0;
+      }
+      return;
+    }
+
+    // moving — 연속 정지 프레임 누적.
+    if (frameDelta <= SETTLE_FRAME_DELTA) settleCountRef.current += 1;
+    else settleCountRef.current = 0;
+    if (settleCountRef.current < SETTLE_FRAMES) return;
+
+    // settled.
+    moveStateRef.current = "idle";
+    settleCountRef.current = 0;
+
+    if (baselineDelta < MOVE_DELTA_MIN) {
+      // 기준으로 되돌아옴 (지터/되돌림) → 무브 없음. 기준만 재확정.
+      stableTupleRef.current = currTuple;
+      return;
+    }
+
+    const cand = searchMove(S, trackFace, orient, currTuple, MATCH_THRESHOLD);
+    if (cand && !useAppStore.getState().isDuringRotation) {
+      commitDetectedMove(
+        { get: () => useAppStore.getState(), set: (p) => useAppStore.setState(p) },
+        cand,
+      );
+      stableTupleRef.current = currTuple; // commit 된 새 면 = 다음 기준.
+      unmatchedRunRef.current = 0;
+      setLastMove((prev) => (prev === cand.move ? prev : cand.move));
+    } else if (!cand) {
+      stableTupleRef.current = currTuple; // 재트리거 spam 방지 위해 기준 갱신.
+      unmatchedRunRef.current += 1;
+      if (unmatchedRunRef.current >= RELOCK_AFTER_UNMATCHED) {
+        // 반복 미매칭 → 방향 lock 이 틀렸을 가능성 → 재lock + 안내.
+        trackOrientRef.current = null;
+        trackFaceRef.current = null;
+        unmatchedRunRef.current = 0;
+        toast({ title: t("trackedSolve.showSolveFace"), duration: 2500 });
+      }
+    }
+  };
+
   // 매 프레임 캔버스에 그려 ImageData 를 detectCubePose 로 전달.
   const startFrameLoop = () => {
     const tick = () => {
@@ -471,6 +597,10 @@ const TrackedSolveStage = () => {
               } else {
                 setCurrentFace((prev) => (prev === null ? prev : null));
               }
+              // tracking phase 에서만 무브 감지 (학습 phase 엔 사용자가 면 돌려 색 학습 중 → 오검출).
+              const learningPhase =
+                calibDeadlineRef.current !== null && Date.now() < calibDeadlineRef.current;
+              if (grid && !learningPhase) runMoveDetection(grid);
             } else {
               // stickers stale — 상태 라인 검출 표시 해제 (fallback centers 로 표시 전환).
               setGridState((prev) => (prev.detected ? { detected: false, classified: 0 } : prev));
@@ -590,7 +720,7 @@ const TrackedSolveStage = () => {
               {gridState.detected
                 ? `grid: ${gridState.classified}/9`
                 : `centers: ${pose?.centerCount ?? 0}/6`}{" "}
-              · cv: {cvStatus}
+              · move: {lastMove ?? "—"} · cv: {cvStatus}
             </div>
           </div>
         )}
