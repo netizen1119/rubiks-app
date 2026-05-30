@@ -87,6 +87,10 @@ export const getCVWorker = (): CVWorkerClient => {
   });
 
   worker.addEventListener("error", (e) => {
+    // worker 런타임 crash — in-flight frame 영구 wedge 방지: inFlight 리셋 + pending 모두 null resolve.
+    inFlight = false;
+    pending.forEach((resolve) => resolve(null));
+    pending.clear();
     readyReject?.(new Error(`OpenCV worker runtime error: ${e.message ?? "unknown"}`));
   });
 

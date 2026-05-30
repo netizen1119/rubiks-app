@@ -87,7 +87,6 @@ const TrackedSolveStage = () => {
   const procCanvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
-  const inited = useRef(false);
   // 처리 throttle 용 마지막 처리 timestamp.
   const lastProcessRef = useRef(0);
   // 학습 phase 의 마감 timestamp. frame loop 가 매 tick 마다 비교해 phase 분기.
@@ -109,6 +108,8 @@ const TrackedSolveStage = () => {
   const [cvStatus, setCvStatus] = useState<"loading" | "ready" | "failed">("loading");
   // OpenCV Worker 핸들 - frame loop 가 ref 로 직접 접근 (re-render 트리거 없이).
   const cvWorkerRef = useRef<CVWorkerClient | null>(null);
+  // worker ready 여부 — RAF 루프가 stale state 클로저 없이 읽도록 ref. 실패 시 false 유지.
+  const cvReadyRef = useRef(false);
   // 마지막 worker 결과 — async 라 매 RAF 마다 최신 결과를 다시 그린다.
   const lastEdgesRef = useRef<{ edges: Uint8Array; width: number; height: number } | null>(null);
   // 마지막 worker ROI — color sampling 을 큐브 영역으로 한정. null 이면 전체 frame.
@@ -138,6 +139,7 @@ const TrackedSolveStage = () => {
     client.ready
       .then(() => {
         if (cancelled) return;
+        cvReadyRef.current = true;
         setCvStatus("ready");
       })
       .catch(() => {
@@ -151,13 +153,19 @@ const TrackedSolveStage = () => {
       });
     return () => {
       cancelled = true;
+      // 언마운트(뒤로 버튼 onExit 미경유 포함) 시 worker 명시 해제 — 스레드/WASM 누수 방지.
+      cvReadyRef.current = false;
+      cvWorkerRef.current?.terminate();
+      cvWorkerRef.current = null;
     };
   }, []);
 
   // 카메라 스트림 획득 — scan 스테이지와 동일한 ideal-only 제약 + 폴백 패턴.
   useEffect(() => {
-    if (inited.current) return;
-    inited.current = true;
+    // StrictMode 안전: inited 가드 없이 setup/cleanup 으로 idempotent 하게. 가드+cleanup
+    // 조합이 위험한 패턴(CLAUDE.md)이라 마운트마다 획득 → 언마운트마다 해제로 정공법.
+    let cancelled = false;
+    let localStream: MediaStream | null = null;
 
     // manual-input 경로로 들어왔으면 분류기 캘리브는 default 상태일 수 있고,
     // scan 경로였더라도 이전 조명에서 학습된 상태일 수 있다. 양쪽 모두에서 깨끗하게 시작.
@@ -179,8 +187,17 @@ const TrackedSolveStage = () => {
         } catch {
           stream = await navigator.mediaDevices.getUserMedia({ video: true });
         }
+        // 획득 도중 언마운트됐으면(StrictMode 즉시 unmount 포함) 바로 정리하고 종료.
+        if (cancelled) {
+          stream.getTracks().forEach((tr) => tr.stop());
+          return;
+        }
+        localStream = stream;
         const videoEl = videoRef.current;
-        if (!videoEl) return;
+        if (!videoEl) {
+          stream.getTracks().forEach((tr) => tr.stop());
+          return;
+        }
         videoEl.srcObject = stream;
         updateStore({ trackStream: stream });
         await videoEl.play();
@@ -194,6 +211,17 @@ const TrackedSolveStage = () => {
       }
     };
     fn();
+
+    return () => {
+      cancelled = true;
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      // 이 effect 가 획득한 스트림 + store 에 올라간 스트림 모두 정지 (onExit 미경유 언마운트 누수 방지).
+      localStream?.getTracks().forEach((tr) => tr.stop());
+      useAppStore.getState().trackStream?.getTracks().forEach((tr) => tr.stop());
+    };
   }, []);
 
   // overlay 캔버스 위치/크기를 video 의 표시 영역에 동기화. Canny edge 와 색 라벨을
@@ -362,13 +390,17 @@ const TrackedSolveStage = () => {
             ctx.drawImage(video, 0, 0, w, h);
             const frame = ctx.getImageData(0, 0, w, h);
             // ROI 가 잡혀 있으면 그 안만 sampling — 손/벽/모니터 색 잡음 차단.
-            const detected = detectCubePose(frame, lastROIRef.current);
+            // stickers 와 동일 stale-gate: 큐브가 frame 밖으로 나가면 옛 ROI 에 fallback 검출이
+            // 갇히지 않게 sampling 단계에도 적용 (drawROIBox 와 같은 기준).
+            const roi = now - lastROIUpdatedAtRef.current > ROI_STALE_MS ? null : lastROIRef.current;
+            const detected = detectCubePose(frame, roi);
             const overlayCtx = syncOverlayLayout(w, h);
             if (overlayCtx) overlayCtx.clearRect(0, 0, w, h);
             // OpenCV Worker: ready 이고 in-flight 가 아니면 frame 별도 copy 를 transfer.
             // 결과는 비동기로 lastEdgesRef/lastROIRef 에 도착 — 매 RAF 마다 그 최신본을 사용/렌더.
             // (직전 worker round-trip 동안 새 frame 은 drop = back-pressure.)
-            const cvWorker = ENABLE_OPENCV_DEBUG ? cvWorkerRef.current : null;
+            // cvReadyRef 게이트 — worker 로딩 중/load 실패면 frame 전송 낭비 방지.
+            const cvWorker = ENABLE_OPENCV_DEBUG && cvReadyRef.current ? cvWorkerRef.current : null;
             if (cvWorker) {
               const cvFrame = ctx.getImageData(0, 0, w, h);
               void cvWorker.computeEdges(cvFrame).then((result) => {
@@ -405,7 +437,6 @@ const TrackedSolveStage = () => {
               now2 - lastStickersUpdatedAtRef.current <= ROI_STALE_MS
                 ? lastStickersRef.current
                 : null;
-            const roi = now2 - lastROIUpdatedAtRef.current > ROI_STALE_MS ? null : lastROIRef.current;
             if (overlayCtx && roi) {
               drawROIBox(overlayCtx, roi);
             }
