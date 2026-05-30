@@ -93,45 +93,49 @@ const detectCubeFace = (cv, bin) => {
     const n = contours.size();
     for (let i = 0; i < n; i++) {
       const cnt = contours.get(i);
-      const peri = cv.arcLength(cnt, true);
       const approx = new cv.Mat();
-      cv.approxPolyDP(cnt, approx, APPROX_EPS_RATIO * peri, true);
-      if (approx.rows === 4 && cv.isContourConvex(approx)) {
-        const d = approx.data32S; // [x0,y0, x1,y1, x2,y2, x3,y3]
-        const xs = [d[0], d[2], d[4], d[6]];
-        const ys = [d[1], d[3], d[5], d[7]];
-        const minX = Math.min(xs[0], xs[1], xs[2], xs[3]);
-        const maxX = Math.max(xs[0], xs[1], xs[2], xs[3]);
-        const minY = Math.min(ys[0], ys[1], ys[2], ys[3]);
-        const maxY = Math.max(ys[0], ys[1], ys[2], ys[3]);
-        const bw = maxX - minX;
-        const bh = maxY - minY;
-        const area = Math.abs(cv.contourArea(approx));
-        const aspect = bh > 0 ? bw / bh : 0;
-        const fill = bw > 0 && bh > 0 ? area / (bw * bh) : 0;
-        if (
-          bw > 0 &&
-          bh > 0 &&
-          area >= QUAD_MIN_AREA &&
-          aspect >= QUAD_ASPECT_MIN &&
-          aspect <= QUAD_ASPECT_MAX &&
-          fill >= QUAD_FILL_MIN
-        ) {
-          cands.push({
-            cx: (minX + maxX) / 2,
-            cy: (minY + maxY) / 2,
-            side: (bw + bh) / 2,
-            corners: [
-              { x: d[0], y: d[1] },
-              { x: d[2], y: d[3] },
-              { x: d[4], y: d[5] },
-              { x: d[6], y: d[7] },
-            ],
-          });
+      // try/finally — arcLength/approxPolyDP/contourArea 가 throw 해도 cnt·approx WASM 해제 보장.
+      try {
+        const peri = cv.arcLength(cnt, true);
+        cv.approxPolyDP(cnt, approx, APPROX_EPS_RATIO * peri, true);
+        if (approx.rows === 4 && cv.isContourConvex(approx)) {
+          const d = approx.data32S; // [x0,y0, x1,y1, x2,y2, x3,y3]
+          const xs = [d[0], d[2], d[4], d[6]];
+          const ys = [d[1], d[3], d[5], d[7]];
+          const minX = Math.min(xs[0], xs[1], xs[2], xs[3]);
+          const maxX = Math.max(xs[0], xs[1], xs[2], xs[3]);
+          const minY = Math.min(ys[0], ys[1], ys[2], ys[3]);
+          const maxY = Math.max(ys[0], ys[1], ys[2], ys[3]);
+          const bw = maxX - minX;
+          const bh = maxY - minY;
+          const area = Math.abs(cv.contourArea(approx));
+          const aspect = bh > 0 ? bw / bh : 0;
+          const fill = bw > 0 && bh > 0 ? area / (bw * bh) : 0;
+          if (
+            bw > 0 &&
+            bh > 0 &&
+            area >= QUAD_MIN_AREA &&
+            aspect >= QUAD_ASPECT_MIN &&
+            aspect <= QUAD_ASPECT_MAX &&
+            fill >= QUAD_FILL_MIN
+          ) {
+            cands.push({
+              cx: (minX + maxX) / 2,
+              cy: (minY + maxY) / 2,
+              side: (bw + bh) / 2,
+              corners: [
+                { x: d[0], y: d[1] },
+                { x: d[2], y: d[3] },
+                { x: d[4], y: d[5] },
+                { x: d[6], y: d[7] },
+              ],
+            });
+          }
         }
+      } finally {
+        approx.delete();
+        cnt.delete();
       }
-      approx.delete();
-      cnt.delete();
     }
     if (cands.length === 0) return result;
 
