@@ -22,12 +22,6 @@ const InitStage = () => {
     setTimeout(() => clearInterval(interval), informationButtonLockDuration + 200);
   };
 
-  // 홈에서 풀이 모드(learn/fast)를 고르고 deviceselect 로 진행.
-  const chooseMode = (mode: "learn" | "fast") => {
-    updateStore({ solveMode: mode, trackedSolve: false, learnMode: false, currentAppStage: "deviceselect" });
-    startCountdown();
-  };
-
   // 카메라 트래킹 모드: 알고리즘은 learn 그대로, scan/manual-input 종료 시 tracked-solve 로 분기.
   const chooseTrackedMode = () => {
     updateStore({ solveMode: "learn", trackedSolve: true, learnMode: false, currentAppStage: "deviceselect" });
@@ -79,52 +73,25 @@ const InitStage = () => {
         }}
       >
         {currentAppStage === "homepage" ? (
-          // 홈: 풀이 모드 선택. 대다수가 입문자이므로 "차근차근 배우기"를 기본 강조.
+          // 홈: 두 가지 학습 흐름만 노출 — ① 내 큐브 스캔→단계별 따라하기 ② 카메라로 따라가며.
+          // (차근차근/빠르게/데모는 코드엔 남기되 홈에서는 숨김.)
           <>
             <Button asChild>
               <motion.button
-                onClick={() => chooseMode("learn")}
+                onClick={chooseLearnMode}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 1.6 } }}
               >
-                {t("home.modeLearn")}
+                {t("home.modeStudyScan")}
               </motion.button>
             </Button>
             <Button asChild variant="secondary">
               <motion.button
-                onClick={() => chooseMode("fast")}
+                onClick={chooseTrackedMode}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 1.7 } }}
               >
-                {t("home.modeFast")}
-              </motion.button>
-            </Button>
-            <Button asChild variant="outline">
-              <motion.button
-                onClick={chooseTrackedMode}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0, transition: { delay: 1.8 } }}
-              >
                 {t("home.modeTracked")}
-              </motion.button>
-            </Button>
-            {/* 학습: ① 데모(섞인 큐브 없이 알고리즘 시연) ② 내 큐브로 스캔→단계별 따라하기. */}
-            <Button asChild variant="link">
-              <motion.button
-                onClick={() => updateStore({ currentAppStage: "learn-method", learnMode: false })}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0, transition: { delay: 1.9 } }}
-              >
-                {t("home.modeStudyDemo")}
-              </motion.button>
-            </Button>
-            <Button asChild variant="link">
-              <motion.button
-                onClick={chooseLearnMode}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0, transition: { delay: 2.0 } }}
-              >
-                {t("home.modeStudyScan")}
               </motion.button>
             </Button>
           </>
