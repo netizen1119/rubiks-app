@@ -48,7 +48,7 @@ const getOrbitControlsDefault = () => {
   return c;
 };
 
-const appStages = ["homepage", "deviceselect", "scan", "manual-input", "solve", "tracked-solve"] as const;
+const appStages = ["homepage", "deviceselect", "scan", "manual-input", "solve", "tracked-solve", "learn-method"] as const;
 export type IAppStages = (typeof appStages)[number];
 
 export type Language = "ko" | "en";
@@ -85,6 +85,9 @@ const defaultStore = {
   // 카메라로 큐브를 실시간 추적하며 풀이하는 모드. true 면 scan/manual-input 완료 시
   // "solve" 대신 "tracked-solve" 로 라우팅. 알고리즘은 solveMode("learn") 그대로 사용.
   trackedSolve: false,
+  // 학습(배우기) 모드. true 면 scan/manual-input 완료 시 "solve" 대신 "learn-method"(연습)로
+  // 라우팅. 알고리즘은 solveMode("learn") 그대로, 단계별 친근 네이밍 + 직접 따라하기.
+  learnMode: false,
   // solve 연습 모드: true 면 사용자가 직접 드래그로 다음 무브를 맞춰야 진행(능동 학습).
   solvePractice: false,
   isDuringRotation: false,
@@ -114,7 +117,7 @@ export interface IStore extends IDefaultData {
   updateCubeScan: (scan: IScanResult) => void;
   rotateCube: (move: ICubeMoves) => void;
   rotateCube2Part: (move: ICubeMoves) => void;
-  initSolveCube: () => void;
+  initSolveCube: (opts?: { autoAdvance?: boolean }) => void;
   nextCubeSolveStep: () => void;
   prevCubeSolveStep: () => void;
   switchSolveMode: (mode: "learn" | "fast") => void;
@@ -128,7 +131,7 @@ export type IStoreFn = { get: () => IStore; set: (payload: Partial<IStore>) => v
 export const useAppStore = create<IStore>()((set, get) => ({
   ...defaultStore,
   updateStore: (payload) => set(payload),
-  initSolveCube: () => initSolveCube({ get, set }),
+  initSolveCube: (opts) => initSolveCube({ get, set }, opts),
   hideCubeStickers: () => hideCubeStickers({ get, set }),
   updateCameraPos: (pos) => updateCameraPos({ get, set, cameraPos: pos }),
   nextCubeSolveStep: () => nextCubeSolveStep({ get, set }),

@@ -17,20 +17,27 @@ const InitStage = () => {
   const [seconds, setSeconds] = useState(informationButtonLockDuration / 1000);
   const t = useTranslations();
 
-  // 홈에서 풀이 모드(learn/fast)를 고르고 deviceselect 로 진행.
-  const chooseMode = (mode: "learn" | "fast") => {
-    updateStore({ solveMode: mode, trackedSolve: false, currentAppStage: "deviceselect" });
-
-    // Set the countdown for information/deviceselet screen
+  const startCountdown = () => {
     const interval = setInterval(() => setSeconds((seconds) => seconds - 1), 1000);
     setTimeout(() => clearInterval(interval), informationButtonLockDuration + 200);
   };
 
+  // 홈에서 풀이 모드(learn/fast)를 고르고 deviceselect 로 진행.
+  const chooseMode = (mode: "learn" | "fast") => {
+    updateStore({ solveMode: mode, trackedSolve: false, learnMode: false, currentAppStage: "deviceselect" });
+    startCountdown();
+  };
+
   // 카메라 트래킹 모드: 알고리즘은 learn 그대로, scan/manual-input 종료 시 tracked-solve 로 분기.
   const chooseTrackedMode = () => {
-    updateStore({ solveMode: "learn", trackedSolve: true, currentAppStage: "deviceselect" });
-    const interval = setInterval(() => setSeconds((seconds) => seconds - 1), 1000);
-    setTimeout(() => clearInterval(interval), informationButtonLockDuration + 200);
+    updateStore({ solveMode: "learn", trackedSolve: true, learnMode: false, currentAppStage: "deviceselect" });
+    startCountdown();
+  };
+
+  // 배우기(연습) 모드: 내 큐브를 스캔/입력 후 단계별로 직접 따라하며 학습.
+  const chooseLearnMode = () => {
+    updateStore({ solveMode: "learn", trackedSolve: false, learnMode: true, currentAppStage: "deviceselect" });
+    startCountdown();
   };
 
   const mainBtnClick = () => {
@@ -99,6 +106,25 @@ const InitStage = () => {
                 animate={{ opacity: 1, y: 0, transition: { delay: 1.8 } }}
               >
                 {t("home.modeTracked")}
+              </motion.button>
+            </Button>
+            {/* 학습: ① 데모(섞인 큐브 없이 알고리즘 시연) ② 내 큐브로 스캔→단계별 따라하기. */}
+            <Button asChild variant="link">
+              <motion.button
+                onClick={() => updateStore({ currentAppStage: "learn-method", learnMode: false })}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: 1.9 } }}
+              >
+                {t("home.modeStudyDemo")}
+              </motion.button>
+            </Button>
+            <Button asChild variant="link">
+              <motion.button
+                onClick={chooseLearnMode}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: 2.0 } }}
+              >
+                {t("home.modeStudyScan")}
               </motion.button>
             </Button>
           </>

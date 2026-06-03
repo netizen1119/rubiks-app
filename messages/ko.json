@@ -19,7 +19,47 @@
     "subText": "스마트폰으로 비추고, 단계별로 따라하세요.",
     "modeLearn": "차근차근 배우기",
     "modeFast": "빠르게 풀이 보기",
-    "modeTracked": "카메라로 따라가며 풀기"
+    "modeTracked": "카메라로 따라가며 풀기",
+    "modeStudyDemo": "푸는 법 데모 보기",
+    "modeStudyScan": "내 큐브로 배우기"
+  },
+  "learnMethod": {
+    "title": "큐브 푸는 법 배우기",
+    "stepOf": "{current} / {total} 단계",
+    "play": "▶ 자동 재생",
+    "pause": "⏸ 일시정지",
+    "replay": "↻ 다시 보기",
+    "howItWorks": "이 단계 설명 보기",
+    "goal": "목표 ·",
+    "approach": "방법 ·",
+    "algo": "대표 알고리즘 ·",
+    "tip": "팁 ·",
+    "steps": {
+      "cross": {
+        "name": "🌼 데이지 → 흰 십자"
+      },
+      "firstLayer": {
+        "name": "🐶 강아지 집 찾기"
+      },
+      "secondLayer": {
+        "name": "🔤 ABC 끼우기"
+      },
+      "yellowCross": {
+        "name": "➕ 노란 십자 (FUR·URF)"
+      },
+      "yellowFace": {
+        "name": "🐟 노란 물고기"
+      },
+      "cornerPerm": {
+        "name": "👍 엄지척 코너"
+      },
+      "edgePerm": {
+        "name": "🎉 마무리 한 방!"
+      }
+    },
+    "practiceHint": "아래 무브를 큐브에서 직접 돌려보세요",
+    "done": "🎉 완성! 직접 다 풀었어요",
+    "resetView": "↺ 시점 리셋"
   },
   "deviceSelect": {
     "scanCount": "스캔 ({seconds})",

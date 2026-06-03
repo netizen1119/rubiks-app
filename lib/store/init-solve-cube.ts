@@ -8,7 +8,7 @@ import {
   transformMoves,
 } from "../solver/normalize";
 
-const initSolveCube = ({ get, set }: IStoreFn) => {
+const initSolveCube = ({ get, set }: IStoreFn, opts?: { autoAdvance?: boolean }) => {
   const cube = get().cube;
   const mode = get().solveMode;
 
@@ -57,7 +57,8 @@ const initSolveCube = ({ get, set }: IStoreFn) => {
     cubeSolutionStep: 0,
     currentStageIndex: initialStageIndex,
   });
-  get().nextCubeSolveStep();
+  // 학습(연습) 진입은 첫 무브 미리보기 없이 step 0 에서 시작해야 드래그 입력과 어긋나지 않는다.
+  if (opts?.autoAdvance !== false) get().nextCubeSolveStep();
 };
 
 export default initSolveCube;

@@ -19,7 +19,47 @@
     "subText": "Scan your cube with a smartphone and get a step-by-step solution.",
     "modeLearn": "Learn step by step",
     "modeFast": "Show me the fastest solve",
-    "modeTracked": "Follow with camera"
+    "modeTracked": "Follow with camera",
+    "modeStudyDemo": "Watch a demo",
+    "modeStudyScan": "Learn with my cube"
+  },
+  "learnMethod": {
+    "title": "Learn how to solve",
+    "stepOf": "Step {current} / {total}",
+    "play": "▶ Auto-play",
+    "pause": "⏸ Pause",
+    "replay": "↻ Replay",
+    "howItWorks": "How this step works",
+    "goal": "Goal ·",
+    "approach": "Approach ·",
+    "algo": "Algorithm ·",
+    "tip": "Tip ·",
+    "steps": {
+      "cross": {
+        "name": "🌼 Daisy → White Cross"
+      },
+      "firstLayer": {
+        "name": "🐶 Find the Lost Dogs"
+      },
+      "secondLayer": {
+        "name": "🔤 The ABC's"
+      },
+      "yellowCross": {
+        "name": "➕ Furry Yellow Plus"
+      },
+      "yellowFace": {
+        "name": "🐟 The Yellow Fish"
+      },
+      "cornerPerm": {
+        "name": "👍 Thumbs-Up Corners"
+      },
+      "edgePerm": {
+        "name": "🎉 Finish Him!"
+      }
+    },
+    "practiceHint": "Make this move on the cube yourself",
+    "done": "🎉 Done! You solved it yourself",
+    "resetView": "↺ Reset view"
   },
   "deviceSelect": {
     "scanCount": "Scan ({seconds})",

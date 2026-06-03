@@ -184,7 +184,8 @@ const ScrambleCube = () => {
       });
       return;
     }
-    const nextStage = useAppStore.getState().trackedSolve ? "tracked-solve" : "solve";
+    const st = useAppStore.getState();
+    const nextStage = st.learnMode ? "learn-method" : st.trackedSolve ? "tracked-solve" : "solve";
     updateStore({ currentAppStage: nextStage });
   };
 
