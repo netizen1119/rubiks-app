@@ -1,9 +1,15 @@
 # 프로젝트 컨텍스트
 
 ## 현재 상태
-**Phase 2b 구현 (2026-05-30).** forward-model 무브 감지 코어(단위 테스트 51/51) + tracked-solve
-카메라 통합 완료. 카메라 실측 미완 (시각 확인 다음). 브랜치 `feat/phase2b-move-detector`:
-- `HANDOVER_v15.md` — **가장 최신** (forward-model 매칭: known S 에 18무브 적용 → 보이는 면 예측
+**큐브 학습 모드 추가 (2026-06-03).** easiestsolve.com 참고 학습 흐름 — 데모(알고리즘 시연) +
+연습(내 큐브 스캔→단계별 따라하기 + 3D 화살표 힌트). 홈 진입점 5→2 정리. 알고리즘은 기존
+`solveLBL` 그대로(신규=프레젠테이션/상호작용 레이어). tsc·51/51 PASS. 카메라 실측은 여전히 미완.
+브랜치 `feat/phase2b-move-detector` (커밋 `06ac926`·`0e5f8b1`, origin 푸시됨):
+- `HANDOVER_v16.md` — **가장 최신** (학습 모드: learn-method stage = demo/practice 디스패처.
+  learn-demo = solved 큐브 알고리즘 시연 루프. learn-practice = 실제 큐브 단계별 따라하기, solve
+  handleGuess/StageInfo/MoveGuide 재사용 + move-arrow 3D 화살표 힌트 + 자유 시점/리셋. learnMode
+  플래그로 scan/manual 완료 분기. 홈 복귀 시 큐브 solved 복원. 홈 2버튼=내큐브로배우기/카메라.)
+- `HANDOVER_v15.md` — Phase 2b (forward-model 매칭: known S 에 18무브 적용 → 보이는 면 예측
   → 관측 9-tuple 해밍 비교. move-detector 순수 코어 = rotateFace/detectableMoves/lockOrientation/
   searchMove, 360 round-trip 테스트. tracker-bridge = rotateCube + cube 문자열 동기. tracked-solve
   = 방향 lock → idle/moving/settled 상태머신 → commit → 미매칭 재lock+toast. + Phase 2a 생명주기
@@ -59,22 +65,29 @@ npm test        # 38 케이스 단위 테스트
 npx tsc --noEmit  # 타입체크
 ```
 
-## 풀이 모드 (3차 추가)
-홈에서 `solveMode` 선택 → init-solve-cube 가 분기:
-- **learn** (차근차근 배우기, 기본): `solveLBL` 8단계, ~98수, 풀 설명.
-- **fast** (빠르게 풀이 보기): `solveFast`(Thistlethwaite 래퍼) 4단계, ~31수. fast 실패 시 learn 폴백.
+## 풀이 모드
+큐브 풀이 알고리즘 (`solveMode`, init-solve-cube 가 분기):
+- **learn** (`solveLBL` 8단계, ~98수, 풀 설명) — 학습/카메라 모드의 기본 알고리즘.
+- **fast** (`solveFast` Thistlethwaite 래퍼, 4단계 ~31수, fast 실패 시 learn 폴백).
 둘 다 면 무브만 출력 → 동일 시각화/정규화 파이프라인 공유.
+solve 스테이지(learn/fast 보기·연습)는 **코드 유지하나 홈에서 숨김** (HANDOVER_v16). 진입은
+learn-practice/tracked-solve 내부에서 알고리즘 재사용.
 
-3번째 홈 버튼 **카메라로 따라가며 풀기** 는 별도 `trackedSolve: boolean` 플래그를 켜고
-deviceselect 로 진입. 알고리즘은 learn 그대로, scan/manual-input 종료 시 `solve` 대신
-`tracked-solve` 스테이지로 분기 (HANDOVER_v9).
+## 홈 진입점 (HANDOVER_v16 정리)
+홈 버튼 2개:
+- **내 큐브로 배우기** (`learnMode: true`) → deviceselect → scan/manual 완료 시 `learn-method`(연습)
+  스테이지. 실제 풀이 단계를 친근 별칭으로 직접 따라하기 + 3D 화살표 힌트.
+- **카메라로 따라가며 풀기** (`trackedSolve: true`) → `tracked-solve` 스테이지 (HANDOVER_v9/v15).
+숨김(코드 유지): 차근차근/빠르게(→solve), 푸는 법 데모(→learn-method demo, `learnMode:false`).
 
 ## 주요 단계 (사용자 흐름)
-1. **homepage** → 「차근차근 배우기 / 빠르게 풀이 보기 / 카메라로 따라가며 풀기」 → **deviceselect**
+1. **homepage** → 「내 큐브로 배우기 / 카메라로 따라가며 풀기」 → **deviceselect**
 2. **deviceselect** → Scan 또는 Manual Input → **scan** / **manual-input**
-3. **manual-input** → 드래그로 큐브 섞기 → "이 상태로 풀기 →" → **solve** (또는 **tracked-solve**)
-4. **solve** → 다음 이동 / 이전 이동 / 자동 재생 / 풀이 원리 보기 → 완료
-4'. **tracked-solve** (Phase 1+ 개발 중) → 카메라 미리보기 + 6중심 검출 오버레이
+3. **manual-input** → 드래그로 큐브 섞기 → "이 상태로 풀기 →" → **learn-method** / **tracked-solve**
+   (learnMode/trackedSolve 분기; solve 는 홈 숨김이라 직접 도달 안 함)
+4. **learn-method (연습)** → 단계별 친근 별칭 + 다음 무브 3D 화살표 → 드래그로 따라하기 → 완료
+4'. **tracked-solve** → 카메라 미리보기 + forward-model 무브 감지 (카메라 실측 미완)
+- 홈 복귀 시 큐비 solved 자동 복원 (main-page, HANDOVER_v16).
 
 ## 핵심 아키텍처
 
