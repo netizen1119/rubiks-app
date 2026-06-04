@@ -1,10 +1,18 @@
 # 프로젝트 컨텍스트
 
 ## 현재 상태
-**큐브 학습 모드 추가 (2026-06-03).** easiestsolve.com 참고 학습 흐름 — 데모(알고리즘 시연) +
-연습(내 큐브 스캔→단계별 따라하기 + 3D 화살표 힌트). 홈 진입점 5→2 정리. 알고리즘은 기존
-`solveLBL` 그대로(신규=프레젠테이션/상호작용 레이어). tsc·51/51 PASS. 카메라 실측은 여전히 미완.
-브랜치 `feat/phase2b-move-detector` (커밋 `06ac926`·`0e5f8b1`, origin 푸시됨):
+**큐브 수학 학습 페이지 + 코드 검토 수리 (2026-06-04).** math-learn 스테이지 추가 — 큐브 풀이를
+11학년 눈높이로 설명하는 한·영 스크롤 아티클(3부: 사람 풀이/컴퓨터 풀이/God's Number=20), KaTeX
+수식 + 데모 버튼이 공유 3D 큐브에 무브 시퀀스 시연. 홈 우상단 「🧮 큐브 수학」 링크 진입. 또
+코드 검토 빨간 버그 3건 수리(아래). tsc·51/51 PASS. 카메라 실측은 여전히 미완.
+브랜치 `feat/phase2b-move-detector` (최신 커밋 `7b7bdac`; `12d4da9`·`d960914` 포함):
+- 코드 검토 수리(`12d4da9`): rotation-utils U2 prerotation `/double` 누락, next-solve-step
+  currentStep 경계 가드, cv-worker-client terminate 시 in-flight Promise hang. (cube-three RAF/
+  renderer cleanup 누수는 `inited 가드+cleanup 위험` 규칙 충돌로 보류 — 메모리 기록.)
+- math-learn(`d960914`·`7b7bdac`): 신규 4파일(math-content/math-blocks/use-cube-demo/math-learn)
+  + main-page 디스패치·홈 링크 + store appStages "math-learn" + i18n math.* + katex(pnpm).
+  **함정 수리**: 큐브 오버레이 `inset-0` 누락 → 긴 스크롤 스테이지서 큐브 화면 밖 사라짐(짧은
+  스테이지는 우연히 정상). 스크롤 비침은 불투명 밴드를 본문 뒤 DOM 에 배치해 z-index 없이 가림.
 - `HANDOVER_v16.md` — **가장 최신** (학습 모드: learn-method stage = demo/practice 디스패처.
   learn-demo = solved 큐브 알고리즘 시연 루프. learn-practice = 실제 큐브 단계별 따라하기, solve
   handleGuess/StageInfo/MoveGuide 재사용 + move-arrow 3D 화살표 힌트 + 자유 시점/리셋. learnMode
@@ -78,6 +86,7 @@ learn-practice/tracked-solve 내부에서 알고리즘 재사용.
 - **내 큐브로 배우기** (`learnMode: true`) → deviceselect → scan/manual 완료 시 `learn-method`(연습)
   스테이지. 실제 풀이 단계를 친근 별칭으로 직접 따라하기 + 3D 화살표 힌트.
 - **카메라로 따라가며 풀기** (`trackedSolve: true`) → `tracked-solve` 스테이지 (HANDOVER_v9/v15).
+홈 우상단 작은 링크 **「🧮 큐브 수학」** → `math-learn` 스테이지 (수학 학습 아티클, 2026-06-04).
 숨김(코드 유지): 차근차근/빠르게(→solve), 푸는 법 데모(→learn-method demo, `learnMode:false`).
 
 ## 주요 단계 (사용자 흐름)
@@ -87,6 +96,8 @@ learn-practice/tracked-solve 내부에서 알고리즘 재사용.
    (learnMode/trackedSolve 분기; solve 는 홈 숨김이라 직접 도달 안 함)
 4. **learn-method (연습)** → 단계별 친근 별칭 + 다음 무브 3D 화살표 → 드래그로 따라하기 → 완료
 4'. **tracked-solve** → 카메라 미리보기 + forward-model 무브 감지 (카메라 실측 미완)
+4''. **math-learn** (홈 우상단 링크) → 수학 학습 아티클(한·영, KaTeX, 데모 버튼이 공유 큐브 시연).
+   상단 고정 밴드에 큐브 핀 고정. components/main-page/stages/math-learn/ (콘텐츠=math-content.ts).
 - 홈 복귀 시 큐비 solved 자동 복원 (main-page, HANDOVER_v16).
 
 ## 핵심 아키텍처
