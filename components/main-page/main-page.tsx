@@ -55,7 +55,7 @@ const MainPage = () => {
       {currentAppStage === "homepage" && (
         <button
           onClick={() => useAppStore.setState({ currentAppStage: "math-learn" })}
-          className="fixed right-4 top-4 z-30 rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur transition-colors hover:text-foreground"
+          className="fixed right-24 top-4 z-50 rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur transition-colors hover:text-foreground"
         >
           {t("entry")}
         </button>

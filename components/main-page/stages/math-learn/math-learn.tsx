@@ -13,16 +13,19 @@ import { MathBlockView } from "./math-blocks";
 import { useCubeDemo } from "./use-cube-demo";
 
 // 수학 학습 페이지: 큐브 풀이를 11학년 눈높이로 설명하는 스크롤 아티클.
-// 상단 sticky 존에 공유 3D 큐브를 고정(불투명 배경이 스크롤되는 본문을 가림),
-// 본문의 demo 블록 버튼이 그 큐브에 무브 시퀀스를 시연.
+// 상단 고정 밴드(헤더+큐브존)는 z-index 없는 fixed:
+//  - 본문(일반 흐름)보다 위에 그려져 스크롤되는 글을 가리고,
+//  - main-page 에서 더 나중 형제인 큐브 오버레이(fixed inset-0, z-auto)는 이 밴드 위에 그려진다.
+// 큐브 오버레이가 viewport 좌상단 고정이라(inset-0), 밴드에 앵커를 두면 큐브가 그 자리에 핀 고정.
+const HEADER_H = 44;
+
 const MathLearnStage = () => {
   const { language, updateStore, cubeScale } = useAppStore();
   const tCommon = useTranslations("common");
   const tMath = useTranslations("math");
   const { play, playingLabel } = useCubeDemo();
 
-  // 마운트: 큐브를 정지·풀린 상태로(데모 훅 reset 은 첫 demo 때 호출되지만, 진입 즉시
-  // 홈 스핀을 멈추기 위해 여기서도 1회 정리) + 아티클에 맞는 작은 스케일.
+  // 진입 시 홈 스핀 정지 + 회전 가드 해제.
   useEffect(() => {
     const st = useAppStore.getState();
     if (st.cubeSpinningTimeline.current) {
@@ -30,9 +33,12 @@ const MathLearnStage = () => {
       st.cubeSpinningTimeline.current = null;
     }
     useAppStore.setState({ isDuringRotation: false });
+  }, []);
 
+  // 뷰포트에 맞춘 큐브 스케일 — 아티클용으로 살짝 작게(상한 0.6).
+  useEffect(() => {
     const apply = () => {
-      const s = Math.min(window.innerWidth / 900, 0.62);
+      const s = Math.min(window.innerWidth / 640, window.innerHeight / 900, 0.6);
       updateStore({ cubeScale: Math.max(0.42, s) });
     };
     apply();
@@ -40,31 +46,18 @@ const MathLearnStage = () => {
     return () => window.removeEventListener("resize", apply);
   }, [updateStore]);
 
-  const cubeZoneH = (THREE_HEIGHT - 110) * cubeScale;
+  // 밴드는 큐브 시각 전체 높이(THREE_HEIGHT*scale)를 덮어야 뒤로 비침이 없다.
+  // 앵커가 존 중앙 → 큐브가 존을 꽉 채우므로 존 높이 = 풀 큐브 높이.
+  const cubeZoneH = THREE_HEIGHT * cubeScale;
+  const bandH = HEADER_H + cubeZoneH + 8;
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[40rem] flex-col px-4 pb-20">
-      {/* sticky 헤더 */}
-      <div className="sticky top-0 z-20 -mx-4 flex items-center justify-between border-b border-border/60 bg-background/95 px-4 py-2 backdrop-blur">
-        <Button variant="ghost" size="sm" className="px-2" onClick={() => updateStore({ currentAppStage: "homepage" })}>
-          ← {tCommon("back")}
-        </Button>
-        <span className="text-sm font-semibold text-foreground">{tMath("title")}</span>
-        <span className="w-12" />
-      </div>
-
-      {/* sticky 큐브 존 — 불투명 배경으로 스크롤되는 본문을 가린다. 큐브 오버레이가 이 위에 그려짐. */}
-      <div
-        className="sticky top-[2.75rem] z-10 -mx-4 flex items-center justify-center bg-background"
-        style={{ height: `${Math.max(150, cubeZoneH)}px`, width: "auto" }}
-      >
-        <div style={{ width: `${THREE_WIDTH * cubeScale}px`, height: `${cubeZoneH}px` }} className="flex items-center justify-center">
-          <CubePosAnchor />
-        </div>
-      </div>
+    <div className="flex flex-col items-center px-4 pb-24">
+      {/* 밴드 높이만큼 띄운 뒤 본문 시작 */}
+      <div aria-hidden="true" style={{ height: `${bandH}px` }} />
 
       {/* 아티클 본문 */}
-      <article className="pt-2">
+      <article className="w-full max-w-[40rem]">
         <p className="mb-3 text-center text-xs text-muted-foreground">{tMath("subtitle")}</p>
         {MATH_BLOCKS.map((block, i) => (
           <MathBlockView key={i} block={block} lang={language} onDemo={play} playingLabel={playingLabel} />
@@ -73,6 +66,27 @@ const MathLearnStage = () => {
           {tMath("sources")}
         </p>
       </article>
+
+      {/* 상단 고정 밴드 — 불투명 bg 로 스크롤되는 본문을 가린다. z-index 대신 DOM 순서로 해결:
+          본문(KaTeX 는 position:relative 라 positioned) 뒤에 둬서 밴드가 그 위에 그려지고,
+          큐브 오버레이는 main-page 에서 더 나중 형제라 밴드 위에 그려진다.
+          순서(페인트): 본문 KaTeX < 밴드 < 큐브 오버레이. fixed 라 시각 위치는 항상 상단. */}
+      <div className="fixed inset-x-0 top-0 flex flex-col items-center bg-background pb-2">
+        <div className="flex w-full max-w-[40rem] items-center justify-between border-b border-border/60 px-2" style={{ height: `${HEADER_H}px` }}>
+          <Button variant="ghost" size="sm" className="px-2" onClick={() => updateStore({ currentAppStage: "homepage" })}>
+            ← {tCommon("back")}
+          </Button>
+          <span className="text-sm font-semibold text-foreground">{tMath("title")}</span>
+          <span className="w-12" />
+        </div>
+        {/* 큐브 존 — 큐브 fixed 오버레이가 이 앵커 자리에 핀 고정. */}
+        <div
+          className="flex items-center justify-center"
+          style={{ width: `${THREE_WIDTH * cubeScale}px`, height: `${cubeZoneH}px` }}
+        >
+          <CubePosAnchor />
+        </div>
+      </div>
     </div>
   );
 };

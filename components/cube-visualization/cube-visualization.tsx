@@ -40,7 +40,10 @@ const CubeVisualization = () => {
   };
 
   return (
-    <div className="fixed w-screen h-screen overflow-hidden pointer-events-none">
+    // inset-0(top-0 left-0) 필수: offset 없는 fixed 는 정적 흐름 위치 기준이라
+    // 긴 스크롤 스테이지(math-learn)에서 오버레이가 문서 아래로 밀려 내부 absolute 큐브가
+    // 화면 밖으로 사라진다. inset-0 으로 viewport 좌상단에 고정한다.
+    <div className="fixed inset-0 w-screen h-screen overflow-hidden pointer-events-none">
       <motion.div className="absolute left-0 top-0 origin-top-left" variants={variants} animate={getVariant()}>
         <CubeThree />
       </motion.div>
