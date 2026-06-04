@@ -19,6 +19,7 @@ const nextCubeSolveStep = ({ get, set }: IStoreFn) => {
   const stages = get().solveStages;
 
   if (currentStep === null || get().isDuringRotation) return;
+  if (currentStep < 0 || currentStep >= solution.length) return;
 
   get().rotateCube2Part(solution[currentStep] as ICubeMoves);
   if (isIn2Part) {

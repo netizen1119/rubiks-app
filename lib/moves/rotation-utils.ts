@@ -19,7 +19,7 @@ export const getRotation = (move: ICubeMoves, base: THREE.Euler) => {
   switch (firstLetMove) {
     case "U":
       target.y = (-Math.PI / 2) * reverse * double;
-      preTarget.y = target.y * halfStepRatio;
+      preTarget.y = (target.y * halfStepRatio) / double;
       break;
     case "D":
       target.y = (Math.PI / 2) * reverse * double;

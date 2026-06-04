@@ -121,7 +121,10 @@ export const getCVWorker = (): CVWorkerClient => {
     },
     terminate: () => {
       worker.terminate();
+      // in-flight frame 영구 hang 방지: 미해결 resolver 모두 null resolve 후 clear.
+      pending.forEach((resolve) => resolve(null));
       pending.clear();
+      inFlight = false;
       singleton = null;
     },
   };
