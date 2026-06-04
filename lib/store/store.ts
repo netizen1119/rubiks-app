@@ -48,7 +48,7 @@ const getOrbitControlsDefault = () => {
   return c;
 };
 
-const appStages = ["homepage", "deviceselect", "scan", "manual-input", "solve", "tracked-solve", "learn-method"] as const;
+const appStages = ["homepage", "deviceselect", "scan", "manual-input", "solve", "tracked-solve", "learn-method", "math-learn"] as const;
 export type IAppStages = (typeof appStages)[number];
 
 export type Language = "ko" | "en";

@@ -322,5 +322,11 @@
     "loadingCV": "Loading cube detector…",
     "cvLoadFailed": "Cube detector failed to load — check your network and retry",
     "showSolveFace": "Couldn't read the move — point the camera straight at the face you're turning"
+  },
+  "math": {
+    "entry": "🧮 Cube Math",
+    "title": "The Math of Solving",
+    "subtitle": "For an 11th-grader — human & computer solving, and “God's Number = 20”",
+    "sources": "Sources: Rokicki, Kociemba, Davidson, Dethridge, “The Diameter of the Rubik's Cube Group Is Twenty” (2013); cube20.org; Korf (1997); Kociemba two-phase; Jaap's Puzzle Page; Singmaster, Notes on Rubik's Magic Cube (1981)."
   }
 }

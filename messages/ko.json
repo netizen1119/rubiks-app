@@ -322,5 +322,11 @@
     "loadingCV": "큐브 검출기 로딩 중…",
     "cvLoadFailed": "큐브 검출기 로드 실패 — 네트워크 확인 후 다시 시도해주세요",
     "showSolveFace": "무브를 못 읽었어요 — 풀고 있는 면을 카메라로 똑바로 비춰주세요"
+  },
+  "math": {
+    "entry": "🧮 큐브 수학",
+    "title": "큐브 풀이의 수학",
+    "subtitle": "11학년 눈높이로 — 사람·컴퓨터의 풀이와 “God's Number = 20”",
+    "sources": "출처: Rokicki·Kociemba·Davidson·Dethridge, “The Diameter of the Rubik's Cube Group Is Twenty” (2013); cube20.org; Korf (1997); Kociemba twophase; Jaap's Puzzle Page; Singmaster, Notes on Rubik's Magic Cube (1981)."
   }
 }
