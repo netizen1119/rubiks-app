@@ -2,28 +2,40 @@
 
 import "katex/dist/katex.min.css";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAppStore } from "@/lib/store/store";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { CubePosAnchor } from "@/components/cube-visualization/cube-pos-anchor";
 import { THREE_HEIGHT, THREE_WIDTH } from "@/components/cube-visualization/cube-three";
-import { MATH_BLOCKS } from "./math-content";
+import { MATH_TABS, pick } from "./math-content";
 import { MathBlockView } from "./math-blocks";
 import { useCubeDemo } from "./use-cube-demo";
 
 // 수학 학습 페이지: 큐브 풀이를 쉬운 눈높이로 설명하는 스크롤 아티클.
-// 상단 고정 밴드(헤더+큐브존)는 z-index 없는 fixed:
+// 긴 글을 3개 탭(사람/컴퓨터/God's Number)으로 분할 — 한 화면 가독성.
+// 상단 고정 밴드(헤더+큐브존+탭바)는 z-index 없는 fixed:
 //  - 본문(일반 흐름)보다 위에 그려져 스크롤되는 글을 가리고,
 //  - main-page 에서 더 나중 형제인 큐브 오버레이(fixed inset-0, z-auto)는 이 밴드 위에 그려진다.
 // 큐브 오버레이가 viewport 좌상단 고정이라(inset-0), 밴드에 앵커를 두면 큐브가 그 자리에 핀 고정.
 const HEADER_H = 44;
+const TAB_H = 40;
 
 const MathLearnStage = () => {
   const { language, updateStore, cubeScale } = useAppStore();
   const tCommon = useTranslations("common");
   const tMath = useTranslations("math");
-  const { play, playingLabel, highlight } = useCubeDemo();
+  const { play, playingLabel, highlight, reset } = useCubeDemo();
+  const [tab, setTab] = useState(0);
+
+  // 탭 전환: 진행 중 시연/외곽선 정리 + 큐브 solved 복원 + 새 탭 상단으로 스크롤.
+  const changeTab = (i: number) => {
+    if (i === tab) return;
+    reset();
+    setTab(i);
+    window.scrollTo(0, 0);
+  };
 
   // 진입 시 홈 스핀 정지 + 회전 가드 해제.
   useEffect(() => {
@@ -49,17 +61,16 @@ const MathLearnStage = () => {
   // 밴드는 큐브 시각 전체 높이(THREE_HEIGHT*scale)를 덮어야 뒤로 비침이 없다.
   // 앵커가 존 중앙 → 큐브가 존을 꽉 채우므로 존 높이 = 풀 큐브 높이.
   const cubeZoneH = THREE_HEIGHT * cubeScale;
-  const bandH = HEADER_H + cubeZoneH + 8;
+  const bandH = HEADER_H + cubeZoneH + TAB_H + 8;
 
   return (
     <div className="flex flex-col items-center px-4 pb-24">
       {/* 밴드 높이만큼 띄운 뒤 본문 시작 */}
       <div aria-hidden="true" style={{ height: `${bandH}px` }} />
 
-      {/* 아티클 본문 */}
+      {/* 아티클 본문 — 활성 탭 블록만 렌더 */}
       <article className="w-full max-w-[40rem]">
-        <p className="mb-3 text-center text-xs text-muted-foreground">{tMath("subtitle")}</p>
-        {MATH_BLOCKS.map((block, i) => (
+        {MATH_TABS[tab].blocks.map((block, i) => (
           <MathBlockView key={i} block={block} lang={language} onDemo={play} playingLabel={playingLabel} highlight={highlight} />
         ))}
         <p className="mt-10 border-t border-border/40 pt-4 text-center text-[0.7rem] leading-relaxed text-muted-foreground">
@@ -85,6 +96,25 @@ const MathLearnStage = () => {
           style={{ width: `${THREE_WIDTH * cubeScale}px`, height: `${cubeZoneH}px` }}
         >
           <CubePosAnchor />
+        </div>
+        {/* 탭바 — 사람/컴퓨터/God's Number */}
+        <div className="flex w-full max-w-[40rem] gap-1 px-2" style={{ height: `${TAB_H}px` }} role="tablist">
+          {MATH_TABS.map((t, i) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={i === tab}
+              onClick={() => changeTab(i)}
+              className={cn(
+                "flex-1 rounded-t-md border-b-2 px-1 text-xs font-semibold transition-colors",
+                i === tab
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {pick(t.label, language)}
+            </button>
+          ))}
         </div>
       </div>
     </div>

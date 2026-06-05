@@ -453,3 +453,22 @@ export const MATH_BLOCKS: MathBlock[] = [
     ],
   },
 ];
+
+// 한 화면에 다 안 들어오는 긴 아티클 → 3개 탭으로 분할(가독성).
+// 경계는 Part 2 / Part 3 의 h2 제목으로 자동 산출(콘텐츠 편집에 견고).
+//  - 탭1 "사람 풀이"   = 인트로 + Part 0(큰 그림) + Part 1
+//  - 탭2 "컴퓨터 풀이" = Part 2
+//  - 탭3 "God's Number" = Part 3 + 기억할 숫자들
+export type MathTab = { id: string; label: L; blocks: MathBlock[] };
+
+const partIdx = (n: number) =>
+  MATH_BLOCKS.findIndex((b) => b.t === "h" && b.lvl === 2 && b.text.en.startsWith(`Part ${n}`));
+
+const p2 = partIdx(2);
+const p3 = partIdx(3);
+
+export const MATH_TABS: MathTab[] = [
+  { id: "humans", label: { ko: "사람 풀이", en: "Humans" }, blocks: MATH_BLOCKS.slice(0, p2) },
+  { id: "computers", label: { ko: "컴퓨터 풀이", en: "Computers" }, blocks: MATH_BLOCKS.slice(p2, p3) },
+  { id: "gods-number", label: { ko: "God's Number", en: "God's Number" }, blocks: MATH_BLOCKS.slice(p3) },
+];

@@ -100,7 +100,10 @@ learn-practice/tracked-solve 내부에서 알고리즘 재사용.
 4. **learn-method (연습)** → 단계별 친근 별칭 + 다음 무브 3D 화살표 → 드래그로 따라하기 → 완료
 4'. **tracked-solve** → 카메라 미리보기 + forward-model 무브 감지 (카메라 실측 미완)
 4''. **math-learn** (홈 우상단 링크) → 수학 학습 아티클(한·영, KaTeX, 데모 버튼이 공유 큐브 시연).
-   상단 고정 밴드에 큐브 핀 고정. components/main-page/stages/math-learn/ (콘텐츠=math-content.ts).
+   상단 고정 밴드에 큐브 핀 고정 + **3탭 분할**(사람 풀이/컴퓨터 풀이/God's Number; MATH_TABS 가
+   Part2·Part3 h2 경계로 자동 슬라이스). 탭 전환 시 reset(시연중단+외곽선+큐브 solved)+스크롤 top.
+   데모 종료 후 **바뀐 조각만 노란 외곽선 강조**(3D 큐비 직접 검사, [[cube-string-vs-3d-cubie-divergence]]).
+   components/main-page/stages/math-learn/ (콘텐츠=math-content.ts).
 - 홈 복귀 시 큐비 solved 자동 복원 (main-page, HANDOVER_v16).
 
 ## 핵심 아키텍처

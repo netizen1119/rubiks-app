@@ -110,6 +110,14 @@ export const useCubeDemo = () => {
     [clearTimers, resetCube]
   );
 
+  // 진행 중 시연 중단 + 강조/큐브 초기화 (탭 전환 등에서 호출).
+  const reset = useCallback(() => {
+    clearTimers();
+    setPlayingLabel(null);
+    setHighlight(null);
+    resetCube();
+  }, [clearTimers, resetCube]);
+
   // 언마운트: 타이머 정리 + 강조 해제 + 풀린 상태 복원 (홈 복귀 시 잔여 시연/외곽선 차단).
   useEffect(() => {
     return () => {
@@ -119,5 +127,5 @@ export const useCubeDemo = () => {
     };
   }, [clearTimers, clearOutline, resetCube]);
 
-  return { play, playingLabel, highlight };
+  return { play, playingLabel, highlight, reset };
 };
