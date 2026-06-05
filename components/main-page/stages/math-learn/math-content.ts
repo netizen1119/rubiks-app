@@ -75,7 +75,7 @@ export const MATH_BLOCKS: MathBlock[] = [
     "그래서 $R\\,U\\,R'\\,U'$ 는 “R 하고, U 하고, R 되돌리고, U 되돌리기”. 이 간결한 언어 덕에 전 세계 큐버가 “알고리즘”(짧은 무브 레시피)을 공유하고 추론한다. 두 인접 면 사이 중간층을 돌리는 슬라이스 무브 $M, E, S$ 도 있다(Roux 에서 특히 중요).",
     "So $R\\,U\\,R'\\,U'$ reads: do R, then U, undo R, undo U. This compact language lets cubers worldwide share “algorithms” (short move recipes) and reason about them. There are also slice moves $M, E, S$ turning the middle layers (key in Roux)."
   ),
-  { t: "demo", label: { ko: "▶ R U R' U' 시연", en: "▶ Play R U R' U'" }, moves: "R U R' U'", note: { ko: "그 유명한 “sexy move”. 몇 개 조각만 순환시키고 나머지는 그대로 둔다.", en: "The famous “sexy move” — cycles a few pieces and leaves the rest alone." } },
+  { t: "demo", label: { ko: "▶ R U R' U' 시연", en: "▶ Play R U R' U'" }, moves: "R U R' U'", note: { ko: "유명한 네 수 트리거(four-turn trigger). 몇 개 조각만 순환시키고 나머지는 그대로 둔다. 여섯 번 반복하면 다시 풀린다(차수 6).", en: "The famous four-turn trigger — cycles a few pieces and leaves the rest alone. Repeat it six times and the cube returns to solved (order 6)." } },
 
   h3("1.2 문제는 얼마나 큰가? 상태 공간", "1.2 How big is the problem? The state space"),
   p(
@@ -193,7 +193,7 @@ export const MATH_BLOCKS: MathBlock[] = [
     "$A$ 는 셋업 무브, $B$ 는 쓸모 있는 알고리즘, $A'$ 는 셋업 되돌리기: “셋업 → 유용한 작업 → 셋업 해제.” 덕분에 하나의 알고리즘을 여러 상황에 재사용한다 — 대상 조각을 알고리즘이 통하는 자리로 옮기고, 실행하고, 다시 제자리로. “조각을 작업장으로 옮겨 작업하고 도로 가져오기” 패턴은 LBL·CFOP·Roux·블라인드 등 어디에나 나온다.",
     "$A$ is a setup move, $B$ a useful algorithm, $A'$ undoes the setup: “setup → do the useful thing → undo setup.” This reuses one algorithm in many situations — carry a target piece to where the algorithm works, run it, carry everything back. This “workshop” pattern appears everywhere: LBL, CFOP, Roux, blindfolded."
   ),
-  { t: "demo", label: { ko: "▶ 켤레 [F : R U R' U'] 시연", en: "▶ Play conjugate [F : R U R' U']" }, moves: "F R U R' U' F'", note: { ko: "셋업 F → sexy move → 셋업 해제 F'. 작용 영역이 옮겨진다.", en: "Setup F → sexy move → undo F'. The region of effect shifts." } },
+  { t: "demo", label: { ko: "▶ 켤레 [F : R U R' U'] 시연", en: "▶ Play conjugate [F : R U R' U']" }, moves: "F R U R' U' F'", note: { ko: "셋업 F → 네 수 트리거 → 셋업 해제 F'. 작용 영역이 옮겨진다.", en: "Setup F → four-turn trigger → undo F'. The region of effect shifts." } },
   callout(
     "패리티 각주: 교환자는 항상 짝수 순열을 만든다. 그래서 위치가 홀수 패리티(예: 정확히 두 조각만 바뀜)면, 교환자로 마무리하기 전에 면 회전 1수를 먼저 넣어 패리티를 고쳐야 한다.",
     "Parity footnote: commutators always produce an even permutation. So if a position has odd parity (e.g. exactly two pieces swapped), you must first insert a single face turn to fix parity before commutators can finish."
