@@ -85,7 +85,7 @@ const MathLearnStage = () => {
       <div className="fixed inset-x-0 top-0 flex flex-col items-center bg-background pb-2">
         <div className="flex w-full max-w-[40rem] items-center justify-between border-b border-border/60 px-2" style={{ height: `${HEADER_H}px` }}>
           <Button variant="ghost" size="sm" className="px-2" onClick={() => updateStore({ currentAppStage: "homepage" })}>
-            ← {tCommon("back")}
+            {tCommon("back")}
           </Button>
           <span className="text-sm font-semibold text-foreground">{tMath("title")}</span>
           <span className="w-12" />
