@@ -1,14 +1,26 @@
 # 프로젝트 컨텍스트
 
 ## 현재 상태
-**math-learn 데모 인터랙티브 강화 (조각 하이라이트) + 더블 무브 박자 수리 (2026-06-05).**
-math-learn 데모가 시연 종료 후 **실제로 바뀐 조각만 노란 외곽선**으로 강조(`outlinedSelection`
-in-place 변이 → OutlinePass) + "N개만 바뀜·나머지 M개 제자리" 캡션. 교환자/켤레의 "나머지는
-그대로" 마법을 눈으로. 검출 = 3D 큐비 직접 검사(slot≠orgIdx OR quaternion 비-identity; 센터·
-코어 제외). superflip=12조각(코너 0), sexy/켤레=7조각으로 검증. 또 데모 더블 무브(U2/F2 등 800ms)
-가 고정 480ms tick 에 회전가드로 드롭되던 버그 → 가변 tick(싱글480/더블880). math-learn·
-learn-demo 양쪽 수리. tsc·51/51 PASS. 카메라 실측은 여전히 미완.
-브랜치 `feat/phase2b-move-detector` (이전: `9826907`; math-learn 도입 `d960914`·`7b7bdac`):
+**math-learn 대대적 개편: 조각 하이라이트 + 3탭 분할 + 쉬운 말 재작성 (2026-06-05).**
+math-learn 수학 학습 페이지를 한 세션에 크게 다듬음 (브라우저 헤드리스 chromium 으로 매 단계
+시각 검증):
+- **조각 하이라이트**(`15b5c4b`): 데모 종료 후 **실제로 바뀐 조각만 노란 외곽선**으로 강조
+  (`outlinedSelection` in-place 변이 → OutlinePass) + "N개만 바뀜·나머지 M개 제자리" 캡션.
+  교환자/켤레의 "나머지는 그대로" 마법을 눈으로. 검출 = 3D 큐비 직접 검사(slot≠orgIdx OR
+  quaternion 비-identity; 센터·코어 제외, [[cube-string-vs-3d-cubie-divergence]]).
+  superflip=12조각(코너 0), 교환자/켤레=7조각으로 검증.
+- **데모 무브 self-paced**(`218ed4d`→`a868073`): 고정 타이머 디스패치가 느린 환경서 더블 무브
+  (800ms)를 회전가드에 드롭하거나 검출을 애니 도중 실행하던 버그. 무브를 "이전 무브 완료
+  (isDuringRotation=false)" 후에만 디스패치 + 검출도 정착 후 → 속도 무관·드롭 불가.
+- **3탭 분할**(`8514caf`): 긴 단일 스크롤 → 사람 풀이/컴퓨터 풀이/God's Number 3탭. MATH_TABS
+  가 Part2·Part3 의 h2 경계로 자동 슬라이스. 탭 전환 시 reset(시연중단+외곽선+큐브 solved)+스크롤.
+- **쉬운 말 재작성**(`c96a50e`): 3탭 산문 전면 평이화(한·영). 긴 문장 분리, em-dash 축소, 어려운
+  표현 교체. 수식·표·데모·숫자·블록 구조는 유지.
+- 부수: "sexy move"→"네 수 트리거"(`462250c`), 부제 "11학년" 삭제(`a868073`), 뒤로 버튼 이중
+  화살표 수리(`9addab9`).
+tsc·51/51 PASS, KaTeX·콘솔 에러 0 확인. 카메라 실측은 여전히 미완.
+브랜치 `feat/phase2b-move-detector` (최신 `c96a50e`; origin/private 푸시됨; math-learn 도입
+`d960914`·`7b7bdac`):
 - 코드 검토 수리(`12d4da9`): rotation-utils U2 prerotation `/double` 누락, next-solve-step
   currentStep 경계 가드, cv-worker-client terminate 시 in-flight Promise hang. (cube-three RAF/
   renderer cleanup 누수는 `inited 가드+cleanup 위험` 규칙 충돌로 보류 — 메모리 기록.)
