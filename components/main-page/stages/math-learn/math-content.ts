@@ -1,5 +1,5 @@
 // 큐브 풀이의 수학 학습 페이지 콘텐츠 (한/영 병행).
-// 원본: rubiks_math_for_11th_graders.md — 11학년 눈높이 3부 구성을 블록 데이터로 이식.
+// 원본: rubiks_math_for_11th_graders.md — 쉬운 눈높이 3부 구성을 블록 데이터로 이식.
 // 블록 단위로 렌더(math-blocks.tsx). 본문은 i18n json 대신 이 데이터 모듈에 보관(장문 가독성).
 
 import { Language } from "@/lib/store/store";

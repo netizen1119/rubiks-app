@@ -8,11 +8,13 @@ import { solved_cube, getPosByIdx } from "@/lib/helpers/helper";
 import { ICubeMoves } from "@/lib/moves/moves";
 import { resetCubiesToSolved } from "../learn-method/reset-cubies";
 
-// 무브 간 간격: 싱글 회전 0.4s, 더블(U2/F2 등)은 0.8s (rotation-utils duration).
-// 회전 중엔 rotateCube 가 가드로 무브를 드롭하므로 더블 뒤엔 더 길게 띄워야 누락이 없다.
-const SINGLE_MS = 480; // 400ms 애니 + 80 버퍼
-const DOUBLE_MS = 880; // 800ms 애니 + 80 버퍼
-const tickFor = (m: ICubeMoves) => (m[1] === "2" ? DOUBLE_MS : SINGLE_MS);
+// 무브를 고정 타이머가 아니라 "이전 무브 완료 후"에 디스패치한다(self-paced).
+// 고정 간격은 환경이 느리면(예: 저사양·백그라운드 탭) 애니가 늦게 끝나 다음 무브가 회전
+// 가드에 드롭되거나, 종료 검출이 애니 도중 실행돼 카운트가 틀린다. isDuringRotation 으로
+// 실제 완료를 기다리면 속도와 무관하게 정확하다.
+const GAP_MS = 90; // 무브 사이 시각적 박자
+const POLL_MS = 40; // 완료 폴링 간격
+const START_MS = 250; // 초기 solved 상태를 잠깐 보여준 뒤 시작
 
 // 움직이는(센터·코어 제외) 조각 수 = 코너 8 + 모서리 12. 캡션 "나머지 M개" 계산용.
 export const MOVABLE_PIECES = 20;
@@ -81,22 +83,29 @@ export const useCubeDemo = () => {
       setHighlight(null);
       setPlayingLabel(label);
 
-      let at = 250; // 초기 상태를 잠깐 보여준 뒤 시작.
-      moves.forEach((m) => {
-        timers.current.push(window.setTimeout(() => useAppStore.getState().rotateCube(m), at));
-        at += tickFor(m);
-      });
-      // 마지막 무브가 정착한 뒤(at 은 이미 애니+버퍼 누적): 라벨 해제 + 바뀐 조각 강조.
-      timers.current.push(
-        window.setTimeout(() => {
+      const push = (fn: () => void, ms: number) => timers.current.push(window.setTimeout(fn, ms));
+
+      // 한 무브가 정착(isDuringRotation=false)할 때까지 폴링 후 다음으로. 속도 무관·드롭 불가.
+      const step = (i: number) => {
+        if (i >= moves.length) {
+          // 마지막 무브까지 정착 — 바뀐 조각 강조 + 라벨 해제.
           setPlayingLabel(null);
           const displaced = collectDisplacedCubies();
           const sel = useAppStore.getState().outlinedSelection.current;
           sel.length = 0;
           displaced.forEach((g) => sel.push(g));
           setHighlight({ label, changed: displaced.length });
-        }, at + 220)
-      );
+          return;
+        }
+        useAppStore.getState().rotateCube(moves[i]); // isDuringRotation 동기적으로 true
+        const waitDone = () => {
+          if (useAppStore.getState().isDuringRotation) push(waitDone, POLL_MS);
+          else push(() => step(i + 1), GAP_MS);
+        };
+        push(waitDone, POLL_MS);
+      };
+
+      push(() => step(0), START_MS);
     },
     [clearTimers, resetCube]
   );

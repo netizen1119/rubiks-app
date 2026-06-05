@@ -12,7 +12,7 @@ import { MATH_BLOCKS } from "./math-content";
 import { MathBlockView } from "./math-blocks";
 import { useCubeDemo } from "./use-cube-demo";
 
-// 수학 학습 페이지: 큐브 풀이를 11학년 눈높이로 설명하는 스크롤 아티클.
+// 수학 학습 페이지: 큐브 풀이를 쉬운 눈높이로 설명하는 스크롤 아티클.
 // 상단 고정 밴드(헤더+큐브존)는 z-index 없는 fixed:
 //  - 본문(일반 흐름)보다 위에 그려져 스크롤되는 글을 가리고,
 //  - main-page 에서 더 나중 형제인 큐브 오버레이(fixed inset-0, z-auto)는 이 밴드 위에 그려진다.
