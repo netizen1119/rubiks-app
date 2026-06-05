@@ -6,6 +6,7 @@ import { ICubeMoves } from "@/lib/moves/moves";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { L, MathBlock, pick } from "./math-content";
+import { DemoHighlight, MOVABLE_PIECES } from "./use-cube-demo";
 
 // KaTeX 렌더 헬퍼 — react-katex 대신 코어 renderToString 사용(타입·의존성 최소).
 const tex = (src: string, display: boolean) =>
@@ -39,9 +40,10 @@ type Props = {
   lang: Language;
   onDemo: (label: string, moves: ICubeMoves[]) => void;
   playingLabel: string | null;
+  highlight: DemoHighlight | null;
 };
 
-export const MathBlockView = ({ block, lang, onDemo, playingLabel }: Props) => {
+export const MathBlockView = ({ block, lang, onDemo, playingLabel, highlight }: Props) => {
   const tr = (l: L) => pick(l, lang);
 
   switch (block.t) {
@@ -128,6 +130,9 @@ export const MathBlockView = ({ block, lang, onDemo, playingLabel }: Props) => {
     case "demo": {
       const label = tr(block.label);
       const active = playingLabel === label;
+      // 이 데모가 방금 끝나 강조 중이면, 실제로 바뀐 조각 수를 캡션으로 보여준다.
+      const shown = highlight && highlight.label === label ? highlight : null;
+      const rest = shown ? MOVABLE_PIECES - shown.changed : 0;
       return (
         <div className="my-3 rounded-md border border-border bg-background px-3 py-2.5">
           <Button
@@ -143,6 +148,16 @@ export const MathBlockView = ({ block, lang, onDemo, playingLabel }: Props) => {
           {block.note && (
             <p className={cn("mt-1 text-center text-xs text-muted-foreground")}>
               <RichText text={tr(block.note)} />
+            </p>
+          )}
+          {shown && (
+            <p className="mt-1.5 rounded bg-amber-400/10 px-2 py-1 text-center text-xs font-medium text-amber-700 dark:text-amber-300">
+              <RichText
+                text={tr({
+                  ko: `🔦 노란 외곽선 ${shown.changed}개 조각만 바뀜 — 나머지 ${rest}개는 제자리.`,
+                  en: `🔦 Only the ${shown.changed} outlined pieces changed — the other ${rest} stayed put.`,
+                })}
+              />
             </p>
           )}
         </div>

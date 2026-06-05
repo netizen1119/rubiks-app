@@ -1,11 +1,14 @@
 # 프로젝트 컨텍스트
 
 ## 현재 상태
-**큐브 수학 학습 페이지 + 코드 검토 수리 (2026-06-04).** math-learn 스테이지 추가 — 큐브 풀이를
-11학년 눈높이로 설명하는 한·영 스크롤 아티클(3부: 사람 풀이/컴퓨터 풀이/God's Number=20), KaTeX
-수식 + 데모 버튼이 공유 3D 큐브에 무브 시퀀스 시연. 홈 우상단 「🧮 큐브 수학」 링크 진입. 또
-코드 검토 빨간 버그 3건 수리(아래). tsc·51/51 PASS. 카메라 실측은 여전히 미완.
-브랜치 `feat/phase2b-move-detector` (최신 커밋 `7b7bdac`; `12d4da9`·`d960914` 포함):
+**math-learn 데모 인터랙티브 강화 (조각 하이라이트) + 더블 무브 박자 수리 (2026-06-05).**
+math-learn 데모가 시연 종료 후 **실제로 바뀐 조각만 노란 외곽선**으로 강조(`outlinedSelection`
+in-place 변이 → OutlinePass) + "N개만 바뀜·나머지 M개 제자리" 캡션. 교환자/켤레의 "나머지는
+그대로" 마법을 눈으로. 검출 = 3D 큐비 직접 검사(slot≠orgIdx OR quaternion 비-identity; 센터·
+코어 제외). superflip=12조각(코너 0), sexy/켤레=7조각으로 검증. 또 데모 더블 무브(U2/F2 등 800ms)
+가 고정 480ms tick 에 회전가드로 드롭되던 버그 → 가변 tick(싱글480/더블880). math-learn·
+learn-demo 양쪽 수리. tsc·51/51 PASS. 카메라 실측은 여전히 미완.
+브랜치 `feat/phase2b-move-detector` (이전: `9826907`; math-learn 도입 `d960914`·`7b7bdac`):
 - 코드 검토 수리(`12d4da9`): rotation-utils U2 prerotation `/double` 누락, next-solve-step
   currentStep 경계 가드, cv-worker-client terminate 시 in-flight Promise hang. (cube-three RAF/
   renderer cleanup 누수는 `inited 가드+cleanup 위험` 규칙 충돌로 보류 — 메모리 기록.)

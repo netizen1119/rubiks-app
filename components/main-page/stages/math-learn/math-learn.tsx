@@ -23,7 +23,7 @@ const MathLearnStage = () => {
   const { language, updateStore, cubeScale } = useAppStore();
   const tCommon = useTranslations("common");
   const tMath = useTranslations("math");
-  const { play, playingLabel } = useCubeDemo();
+  const { play, playingLabel, highlight } = useCubeDemo();
 
   // 진입 시 홈 스핀 정지 + 회전 가드 해제.
   useEffect(() => {
@@ -60,7 +60,7 @@ const MathLearnStage = () => {
       <article className="w-full max-w-[40rem]">
         <p className="mb-3 text-center text-xs text-muted-foreground">{tMath("subtitle")}</p>
         {MATH_BLOCKS.map((block, i) => (
-          <MathBlockView key={i} block={block} lang={language} onDemo={play} playingLabel={playingLabel} />
+          <MathBlockView key={i} block={block} lang={language} onDemo={play} playingLabel={playingLabel} highlight={highlight} />
         ))}
         <p className="mt-10 border-t border-border/40 pt-4 text-center text-[0.7rem] leading-relaxed text-muted-foreground">
           {tMath("sources")}
