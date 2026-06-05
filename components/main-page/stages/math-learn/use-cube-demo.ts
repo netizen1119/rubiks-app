@@ -7,8 +7,11 @@ import { solved_cube } from "@/lib/helpers/helper";
 import { ICubeMoves } from "@/lib/moves/moves";
 import { resetCubiesToSolved } from "../learn-method/reset-cubies";
 
-// 무브 간 간격 (회전 ~0.4s + 버퍼). learn-demo 와 동일 박자.
-const TICK_MS = 480;
+// 무브 간 간격: 싱글 회전 0.4s, 더블(U2/F2 등)은 0.8s (rotation-utils duration).
+// 회전 중엔 rotateCube 가 가드로 무브를 드롭하므로 더블 뒤엔 더 길게 띄워야 누락이 없다.
+const SINGLE_MS = 480; // 400ms 애니 + 80 버퍼
+const DOUBLE_MS = 880; // 800ms 애니 + 80 버퍼
+const tickFor = (m: ICubeMoves) => (m[1] === "2" ? DOUBLE_MS : SINGLE_MS);
 
 // 수학 학습 페이지의 인터랙티브 데모: 버튼을 누르면 공유 메인 큐브를 solved 로 되돌린 뒤
 // 주어진 무브 시퀀스를 한 무브씩 애니메이션. 시각 시연 전용이라 cube 문자열은 건드리지 않는다.
@@ -44,7 +47,7 @@ export const useCubeDemo = () => {
       let at = 250; // 초기 상태를 잠깐 보여준 뒤 시작.
       moves.forEach((m) => {
         timers.current.push(window.setTimeout(() => useAppStore.getState().rotateCube(m), at));
-        at += TICK_MS;
+        at += tickFor(m);
       });
       // 마지막 무브 종료 후 라벨 해제.
       timers.current.push(window.setTimeout(() => setPlayingLabel(null), at + 200));

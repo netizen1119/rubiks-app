@@ -15,8 +15,11 @@ import gsap from "gsap";
 import { LEARN_STEPS, invertMoves } from "./learn-steps";
 import { resetCubiesToSolved } from "./reset-cubies";
 
-// 각 데모 무브 사이 간격 (회전 ~0.4s + 버퍼). solve 자동재생과 동일.
-const TICK_MS = 480;
+// 각 데모 무브 사이 간격: 싱글 0.4s, 더블(R2/U2 등)은 0.8s (rotation-utils duration).
+// 회전 중 rotateCube 가 가드로 드롭하므로 더블 뒤엔 더 띄워야 누락이 없다.
+const SINGLE_MS = 480; // 400ms 애니 + 80 버퍼
+const DOUBLE_MS = 880; // 800ms 애니 + 80 버퍼
+const tickFor = (m: string) => (m[1] === "2" ? DOUBLE_MS : SINGLE_MS);
 // 케이스를 보여주고 시작하기 전 대기, 풀린 뒤 다음 루프까지 대기.
 const CASE_VIEW_MS = 650;
 const LOOP_GAP_MS = 1100;
@@ -60,7 +63,7 @@ const LearnDemo = () => {
       let at = CASE_VIEW_MS;
       moves.forEach((m) => {
         timers.current.push(window.setTimeout(() => useAppStore.getState().rotateCube(m), at));
-        at += TICK_MS;
+        at += tickFor(m);
       });
 
       // 3) 풀린 뒤 대기, loop 면 다시 재생.
